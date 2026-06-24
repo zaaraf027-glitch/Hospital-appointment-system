@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, ArrowRight, HeartPulse, Shield } from 'lucide-react';
 
@@ -10,8 +10,10 @@ const Signup = () => {
   const [role, setRole] = useState('patient'); // 'patient' or 'admin'
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     // Check if role was passed via navigation state
     if (location.state && location.state.role) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRole(location.state.role);
     }
   }, [location]);

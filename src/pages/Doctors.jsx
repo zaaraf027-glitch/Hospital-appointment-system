@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Filter, Stethoscope } from 'lucide-react';
 import DoctorCard from '../components/DoctorCard';
 import { doctors } from '../data/doctors';

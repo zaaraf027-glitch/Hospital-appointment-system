@@ -1,19 +1,30 @@
-import React from 'react';
+import { useState } from 'react';
 import { Star, Clock, MapPin, Stethoscope } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const DoctorCard = ({ doctor }) => {
   const navigate = useNavigate();
+  const [imgError, setImgError] = useState(false);
+
+  const cleanName = doctor.name?.replace(/^(Dr\.\s*|Dr\s+)/i, '') ?? '';
+  const initial = cleanName.trim()[0]?.toUpperCase() ?? '?';
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col">
       <div className="p-5 flex gap-4">
         <div className="relative shrink-0">
-          <img 
-            src={doctor.image} 
-            alt={doctor.name} 
-            className="w-24 h-24 rounded-full object-cover border-2 border-blue-50"
-          />
+          {imgError || !doctor.image ? (
+            <div className="w-24 h-24 rounded-full bg-cyan-50/80 text-[#14b8a6] border border-cyan-100/50 flex items-center justify-center font-bold text-4xl select-none" aria-label={doctor.name}>
+              {initial}
+            </div>
+          ) : (
+            <img 
+              src={doctor.image} 
+              alt={doctor.name} 
+              className="w-24 h-24 rounded-full object-cover border-2 border-blue-50"
+              onError={() => setImgError(true)}
+            />
+          )}
           <span className="absolute bottom-0 right-0 bg-green-500 w-4 h-4 rounded-full border-2 border-white" title="Available Today"></span>
         </div>
         <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -27,8 +27,18 @@ import {
   Menu,
   X,
   LogOut,
-  Sparkles,
-  Stethoscope
+  Stethoscope,
+  Lock,
+  Eye,
+  EyeOff,
+  Camera,
+  Pencil,
+  Droplets,
+  Ruler,
+  Weight,
+  Pill,
+  Activity,
+  ChevronRight
 } from 'lucide-react';
 import { doctors } from '../data/doctors';
 import { appointments as initialAppointments } from '../data/appointments';
@@ -48,14 +58,22 @@ const AVATAR_COLORS = [
 const DoctorAvatar = ({ src, name, className = '' }) => {
   const [imgError, setImgError] = useState(false);
 
-  // Pick a stable colour based on the first character's char-code
-  const colorClass = AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
-  const initial    = name?.trim()[0]?.toUpperCase() ?? '?';
+  // Strip "Dr." or "Dr" prefix (case-insensitive) to get the actual name initial
+  const cleanName = name?.replace(/^(Dr\.\s*|Dr\s+)/i, '') ?? '';
+  const initial    = cleanName.trim()[0]?.toUpperCase() ?? '?';
+
+  // Force rounded-full for circular avatar
+  const avatarClass = className
+    .replace(/\brounded-[a-z0-9]+\b/g, 'rounded-full')
+    .replace(/\brounded\b/g, 'rounded-full');
+
+  // Use the new colour theme: light cyan background and teal text
+  const colorClass = 'bg-cyan-50/80 text-teal-600 border border-cyan-100/50';
 
   if (imgError || !src) {
     return (
       <div
-        className={`flex items-center justify-center font-bold select-none ${colorClass} ${className}`}
+        className={`flex items-center justify-center font-bold select-none ${colorClass} ${avatarClass}`}
         aria-label={name}
       >
         {initial}
@@ -67,7 +85,7 @@ const DoctorAvatar = ({ src, name, className = '' }) => {
     <img
       src={src}
       alt={name}
-      className={className}
+      className={avatarClass}
       onError={() => setImgError(true)}
     />
   );
@@ -126,9 +144,45 @@ const Dashboard = () => {
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitted, setSupportSubmitted] = useState(false);
   
+  // Settings page state
+  const [showMedicalModal, setShowMedicalModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+  const [showPasswordText, setShowPasswordText] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirm: '' });
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [medicalInfo, setMedicalInfo] = useState({
+    height: '170',
+    weight: '62',
+    allergies: '',
+    chronicConditions: ''
+  });
+  const [medicalInfoDraft, setMedicalInfoDraft] = useState({
+    height: '170',
+    weight: '62',
+    allergies: '',
+    chronicConditions: ''
+  });
+  const [medicalSaved, setMedicalSaved] = useState(false);
+  const [profileSavedBackup, setProfileSavedBackup] = useState(null);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  
+  const activityLog = [
+    { action: 'Profile updated', date: 'Today, 10:30 AM', color: 'bg-blue-500', detail: 'Updated full name and contact number' },
+    { action: 'Appointment booked with Dr. Sharma', date: '22 June 2026', color: 'bg-secondary', detail: 'Cardiology consultation at 3:00 PM' },
+    { action: 'Medical report uploaded', date: '20 June 2026', color: 'bg-purple-500', detail: 'Blood test results from City Lab' },
+    { action: 'Password changed', date: '15 June 2026', color: 'bg-amber-500', detail: 'Password updated successfully' },
+    { action: 'Personal information updated', date: '10 June 2026', color: 'bg-green-500', detail: 'Address changed to Varanasi, UP' },
+    { action: 'Account created', date: '5 June 2026', color: 'bg-indigo-500', detail: 'Registered as a new patient' },
+    { action: 'Email verified', date: '5 June 2026', color: 'bg-cyan-500', detail: 'Email student@carewell.com verified' },
+    { action: 'Two-Factor Authentication enabled', date: '6 June 2026', color: 'bg-emerald-500', detail: 'Added authenticator app' },
+  ];
+  
   // Auto-scroll to top when active tab changes
   useEffect(() => {
     window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSidebarOpen(false);
   }, [activeTab]);
 
@@ -197,6 +251,7 @@ const Dashboard = () => {
       
       const cancelledAppt = appointmentsList.find(a => a.id === id);
       const newNotif = {
+        // eslint-disable-next-line react-hooks/purity
         id: Date.now(),
         text: `Cancelled appointment with ${cancelledAppt.doctorName}`,
         read: false,
@@ -246,7 +301,7 @@ const Dashboard = () => {
       )}
 
       {/* Sidebar Panel */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-68 bg-surface-container-lowest border-r border-[#E2E8F0] flex flex-col justify-between transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-container-lowest border-r border-[#E2E8F0] flex flex-col justify-between transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Brand Area */}
         <div>
@@ -355,7 +410,7 @@ const Dashboard = () => {
       </aside>
 
       {/* ----------------- MAIN WRAPPER PANEL ----------------- */}
-      <div className="flex-1 md:pl-68 flex flex-col min-h-screen">
+      <div className="flex-1 md:pl-72 flex flex-col min-h-screen">
         
         {/* ----------------- TOP HEADER COMPONENT ----------------- */}
         <header className="h-20 bg-surface-container-lowest border-b border-[#E2E8F0] px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
@@ -447,11 +502,9 @@ const Dashboard = () => {
                 }}
                 className="flex items-center gap-3 p-1.5 pr-3 hover:bg-blue-50 hover:text-secondary rounded-full transition-colors text-left"
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" 
-                  alt="Student Avatar" 
-                  className="w-8.5 h-8.5 rounded-full object-cover border border-[#E2E8F0]"
-                />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-teal-400 flex items-center justify-center text-white text-sm font-black shrink-0 border border-[#E2E8F0]">
+                  {patientInfo.name?.charAt(0)?.toUpperCase() || 'S'}
+                </div>
                 <div className="hidden sm:flex flex-col">
                   <span className="text-base font-extrabold text-on-surface leading-none">{patientInfo.name}</span>
                   <span className="text-base font-bold uppercase tracking-wider text-outline mt-0.5">Patient / Student</span>
@@ -1118,8 +1171,8 @@ const Dashboard = () => {
                     <div key={appt.id} className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:border-blue-100 transition-all">
                       
                       <div className="flex items-start gap-4 w-full sm:w-auto">
-                        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center shrink-0 border border-[#E2E8F0] overflow-hidden text-5xl font-bold text-secondary">
-                          {appt.doctorName.charAt(4)}
+                        <div className="w-14 h-14 rounded-full bg-cyan-50/80 text-[#14b8a6] border border-cyan-100/50 flex items-center justify-center shrink-0 overflow-hidden text-lg font-extrabold select-none">
+                          {appt.doctorName.replace(/^(Dr\.\s*|Dr\s+)/i, '').trim()[0]?.toUpperCase() ?? '?'}
                         </div>
                         <div className="space-y-1">
                           <h4 className="font-extrabold text-on-surface text-base">{appt.doctorName}</h4>
@@ -1210,107 +1263,330 @@ const Dashboard = () => {
 
           {/* 5. VIEW: MY PROFILE TAB */}
           {activeTab === 'profile' && (
-            <div className="max-w-3xl mx-auto bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6 sm:p-8 space-y-8 animate-fadeIn">
-              
-              <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center pb-6 border-b border-[#E2E8F0]">
-                <div className="relative">
-                  <img 
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" 
-                    alt="Student Avatar" 
-                    className="w-20 h-20 rounded-full object-cover border-2 border-blue-50"
-                  />
-                  <span className="absolute bottom-0 right-0 bg-green-500 w-5 h-5 rounded-full border-2 border-white"></span>
+            <div className="animate-fadeIn">
+              {/* ---- PROFILE & MEDICAL INFO ---- */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                
+                {/* LEFT: Profile Card with Form */}
+                <div className="lg:col-span-3 bg-surface-container-lowest rounded-xl border border-[#E2E8F0] shadow-level-1 p-6 sm:p-8 space-y-6">
+                  {/* Profile Header */}
+                  <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center pb-6 border-b border-[#E2E8F0]">
+                    <div className="relative group">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-secondary to-teal-400 flex items-center justify-center text-white text-3xl font-black shadow-lg">
+                        {patientInfo.name?.charAt(0)?.toUpperCase() || 'S'}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 flex-1">
+                      <h3 className="text-2xl font-black tracking-tight text-on-surface">{patientInfo.name}</h3>
+                      <p className="text-sm text-outline font-semibold">{patientInfo.email} &bull; Student / Patient</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-secondary text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                          <Droplets className="w-3 h-3" /> Blood Group: {patientInfo.bloodGroup}
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                          Age: {patientInfo.age}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personal Information Form */}
+                  <div className="space-y-5">
+                    <h4 className="text-sm font-extrabold text-on-surface tracking-tight">Personal Information</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider">Full Name</label>
+                        <input 
+                          type="text"
+                          value={patientInfo.name}
+                          onChange={(e) => setPatientInfo({ ...patientInfo, name: e.target.value })}
+                          className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider">Email Address</label>
+                        <input 
+                          type="email"
+                          value={patientInfo.email}
+                          onChange={(e) => setPatientInfo({ ...patientInfo, email: e.target.value })}
+                          className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-5">
+                    <h4 className="text-sm font-extrabold text-on-surface tracking-tight">Contact Information</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider">Contact Number</label>
+                        <input 
+                          type="tel"
+                          value={patientInfo.phone}
+                          onChange={(e) => setPatientInfo({ ...patientInfo, phone: e.target.value })}
+                          className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider">Residential Address</label>
+                        <input 
+                          type="text"
+                          value={patientInfo.address}
+                          onChange={(e) => setPatientInfo({ ...patientInfo, address: e.target.value })}
+                          className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-center gap-3 pt-4 border-t border-[#E2E8F0]">
+                    <button 
+                      onClick={() => {
+                        if (profileSavedBackup) {
+                          setPatientInfo(profileSavedBackup);
+                        }
+                      }}
+                      className="border border-[#E2E8F0] hover:bg-gray-50 text-outline font-bold text-sm py-2.5 px-6 rounded-lg transition-all cursor-pointer active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setProfileSavedBackup({ ...patientInfo });
+                        setProfileSaveSuccess(true);
+                        setTimeout(() => setProfileSaveSuccess(false), 2500);
+                      }}
+                      className={`${profileSaveSuccess ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-secondary hover:bg-teal-600'} text-white font-bold text-sm py-2.5 px-6 rounded-lg shadow-level-1 transition-all flex items-center gap-2 cursor-pointer active:scale-95`}
+                    >
+                      {profileSaveSuccess ? (
+                        <><CheckCircle className="w-4 h-4" /> Saved!</>
+                      ) : (
+                        <><Check className="w-4 h-4" /> Save Changes</>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-5xl font-black tracking-tight text-on-surface">{patientInfo.name}</h3>
-                  <p className="text-base text-outline font-semibold">{patientInfo.email} • Student / Patient</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="bg-blue-50 text-secondary text-base font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md">Blood Group: {patientInfo.bloodGroup}</span>
-                    <span className="bg-purple-50 text-purple-600 text-base font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md">Age: {patientInfo.age}</span>
+
+                {/* RIGHT: Medical Information Card */}
+                <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-[#E2E8F0] shadow-level-1 p-6 space-y-1">
+                  <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
+                        <HeartPulse className="w-4 h-4 text-rose-500" />
+                      </div>
+                      <h4 className="text-sm font-extrabold text-on-surface tracking-tight">Medical Information</h4>
+                    </div>
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="text-xs font-bold text-secondary bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="w-3 h-3" /> Edit Medical Details
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-[#E2E8F0]">
+                    {/* Blood Group */}
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="w-full flex items-center justify-between py-4 hover:bg-blue-50/40 -mx-2 px-2 rounded-lg transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                          <Droplets className="w-4.5 h-4.5 text-red-500" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-secondary transition-colors">Blood Group</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-on-surface">{patientInfo.bloodGroup}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
+
+                    {/* Height */}
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="w-full flex items-center justify-between py-4 hover:bg-blue-50/40 -mx-2 px-2 rounded-lg transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                          <Ruler className="w-4.5 h-4.5 text-blue-500" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-secondary transition-colors">Height</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-on-surface">{medicalInfo.height} cm</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
+
+                    {/* Weight */}
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="w-full flex items-center justify-between py-4 hover:bg-blue-50/40 -mx-2 px-2 rounded-lg transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                          <Weight className="w-4.5 h-4.5 text-emerald-500" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-secondary transition-colors">Weight</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-on-surface">{medicalInfo.weight} kg</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
+
+                    {/* Allergies */}
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="w-full flex items-center justify-between py-4 hover:bg-blue-50/40 -mx-2 px-2 rounded-lg transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                          <Pill className="w-4.5 h-4.5 text-green-500" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-secondary transition-colors">Allergies</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-outline">{medicalInfo.allergies || 'No known allergies'}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
+
+                    {/* Chronic Conditions */}
+                    <button 
+                      onClick={() => { setMedicalInfoDraft({ ...medicalInfo }); setShowMedicalModal(true); }}
+                      className="w-full flex items-center justify-between py-4 hover:bg-blue-50/40 -mx-2 px-2 rounded-lg transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition-colors">
+                          <Activity className="w-4.5 h-4.5 text-pink-500" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-secondary transition-colors">Chronic Conditions</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-outline">{medicalInfo.chronicConditions || 'None'}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
-
-              <form onSubmit={handleUpdateProfile} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-base font-bold text-outline uppercase tracking-wider">Full Name</label>
-                    <input 
-                      type="text"
-                      value={patientInfo.name}
-                      onChange={(e) => setPatientInfo({ ...patientInfo, name: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-low border border-gray-150 rounded-lg px-4 py-3 text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-surface-container-lowest transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-base font-bold text-outline uppercase tracking-wider">Email Address</label>
-                    <input 
-                      type="email"
-                      value={patientInfo.email}
-                      onChange={(e) => setPatientInfo({ ...patientInfo, email: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-low border border-gray-150 rounded-lg px-4 py-3 text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-surface-container-lowest transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-base font-bold text-outline uppercase tracking-wider">Contact Number</label>
-                    <input 
-                      type="tel"
-                      value={patientInfo.phone}
-                      onChange={(e) => setPatientInfo({ ...patientInfo, phone: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-low border border-gray-150 rounded-lg px-4 py-3 text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-surface-container-lowest transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-base font-bold text-outline uppercase tracking-wider">Residential Address</label>
-                    <input 
-                      type="text"
-                      value={patientInfo.address}
-                      onChange={(e) => setPatientInfo({ ...patientInfo, address: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-low border border-gray-150 rounded-lg px-4 py-3 text-base font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-surface-container-lowest transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-50 pt-6 flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-secondary text-on-secondary hover:bg-secondary text-on-secondary text-white font-bold text-base py-3 px-6 rounded-lg tracking-tight transition-all shadow-level-1 shadow-blue-500/10"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-
             </div>
           )}
 
           {/* 6. VIEW: SETTINGS TAB */}
           {activeTab === 'settings' && (
-            <div className="max-w-3xl mx-auto bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6 sm:p-8 space-y-6 animate-fadeIn">
-              <h3 className="text-base font-extrabold tracking-tight text-on-surface pb-4 border-b border-gray-50">Account Preferences</h3>
-              
-              <div className="space-y-5">
-                <div className="flex items-center justify-between py-2">
-                  <div className="space-y-0.5">
-                    <h5 className="text-base font-extrabold text-on-surface">Email Notifications</h5>
-                    <p className="text-base font-semibold text-outline">Receive booking confirmations and reminders via email.</p>
+            <div className="animate-fadeIn space-y-6">
+              {/* ---- BOTTOM ROW: Account Security + Recent Activity ---- */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Account Security Card */}
+                <div className="bg-surface-container-lowest rounded-xl border border-[#E2E8F0] shadow-level-1 p-6 space-y-5">
+                  <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Lock className="w-4 h-4 text-secondary" />
+                      </div>
+                      <h4 className="text-sm font-extrabold text-on-surface tracking-tight">Account Security</h4>
+                    </div>
+                    <button 
+                      onClick={() => { setPasswordForm({ current: '', newPass: '', confirm: '' }); setShowPasswordModal(true); }}
+                      className="text-xs font-bold text-secondary bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="w-3 h-3" /> Edit
+                    </button>
                   </div>
-                  <input type="checkbox" defaultChecked className="w-9 h-5 bg-gray-200 rounded-full cursor-pointer focus:outline-none" />
+
+                  {/* Password Row */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-slate-600">Password</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-outline tracking-widest">••••••••••••</span>
+                        <button 
+                          onClick={() => { setPasswordForm({ current: '', newPass: '', confirm: '' }); setShowPasswordModal(true); }}
+                          className="text-xs font-bold text-slate-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer active:scale-95"
+                        >
+                          Change Password
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Last Changed */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-600">Last changed</span>
+                      <span className="text-sm font-semibold text-outline">20 June 2026</span>
+                    </div>
+
+                    {/* 2FA Toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
+                      <span className="text-sm font-bold text-slate-600">Two-Factor Authentication</span>
+                      <button
+                        onClick={() => {
+                          const next = !twoFactorEnabled;
+                          if (!next) {
+                            if (window.confirm('Are you sure you want to disable Two-Factor Authentication? This will make your account less secure.')) {
+                              setTwoFactorEnabled(false);
+                            }
+                          } else {
+                            setTwoFactorEnabled(true);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full cursor-pointer transition-all active:scale-95 ${
+                          twoFactorEnabled 
+                            ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' 
+                            : 'text-red-600 bg-red-50 hover:bg-red-100'
+                        }`}
+                      >
+                        {twoFactorEnabled ? (
+                          <><CheckCircle className="w-3.5 h-3.5" /> Enabled</>
+                        ) : (
+                          <><XCircle className="w-3.5 h-3.5" /> Disabled</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between py-2">
-                  <div className="space-y-0.5">
-                    <h5 className="text-base font-extrabold text-on-surface">Two-Factor Authentication</h5>
-                    <p className="text-base font-semibold text-outline">Secure your digital health records using 2FA.</p>
+                {/* Recent Activity Card */}
+                <div className="bg-surface-container-lowest rounded-xl border border-[#E2E8F0] shadow-level-1 p-6 space-y-4">
+                  <div className="flex items-center gap-2 pb-4 border-b border-[#E2E8F0]">
+                    <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <h4 className="text-sm font-extrabold text-on-surface tracking-tight">Recent Activity</h4>
                   </div>
-                  <input type="checkbox" className="w-9 h-5 bg-gray-200 rounded-full cursor-pointer focus:outline-none" />
+
+                  <div className="space-y-0">
+                    {activityLog.slice(0, 5).map((item, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => setShowActivityModal(true)}
+                        className="w-full flex items-center justify-between py-3 border-b border-[#E2E8F0] last:border-b-0 group hover:bg-blue-50/30 -mx-2 px-2 rounded-lg transition-colors cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
+                          <span className="text-sm font-semibold text-slate-700 group-hover:text-secondary transition-colors">{item.action}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-outline shrink-0 ml-4">{item.date}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-outline opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={() => setShowActivityModal(true)}
+                    className="w-full mt-2 text-sm font-bold text-secondary bg-blue-50/60 hover:bg-blue-100 py-2.5 rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
+                  >
+                    View All Activity
+                  </button>
                 </div>
               </div>
             </div>
@@ -1321,7 +1597,7 @@ const Dashboard = () => {
 
       {/* ----------------- BOOKING SUCCESS DIALOG/MODAL ----------------- */}
       {bookingSuccess && latestBookedAppt && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
           <div className="bg-surface-container-lowest w-full max-w-md rounded-lg p-6 shadow-2xl border border-gray-50 text-center animate-scaleUp space-y-5">
             <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
               <Check className="w-8 h-8" strokeWidth={3} />
@@ -1371,7 +1647,7 @@ const Dashboard = () => {
 
       {/* ----------------- SUPPORT DIALOG/MODAL ----------------- */}
       {showSupportModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
           <div className="bg-surface-container-lowest w-full max-w-md rounded-lg p-6 shadow-2xl border border-gray-50 animate-scaleUp">
             
             <div className="flex justify-between items-center mb-4">
@@ -1420,6 +1696,248 @@ const Dashboard = () => {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MEDICAL INFO EDIT MODAL ----------------- */}
+      {showMedicalModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest w-full max-w-md rounded-lg p-6 shadow-2xl border border-gray-50 animate-scaleUp">
+            <div className="flex justify-between items-center mb-6 border-b border-[#E2E8F0] pb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
+                  <HeartPulse className="w-4 h-4 text-rose-500" />
+                </div>
+                <h4 className="font-bold text-base text-on-surface">Edit Medical Details</h4>
+              </div>
+              <button onClick={() => setShowMedicalModal(false)} className="text-outline hover:text-gray-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setMedicalInfo(medicalInfoDraft);
+              setMedicalSaved(true);
+              setTimeout(() => {
+                setMedicalSaved(false);
+                setShowMedicalModal(false);
+              }, 1500);
+            }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Height (cm)</label>
+                  <input
+                    type="number"
+                    value={medicalInfoDraft.height}
+                    onChange={(e) => setMedicalInfoDraft({ ...medicalInfoDraft, height: e.target.value })}
+                    className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={medicalInfoDraft.weight}
+                    onChange={(e) => setMedicalInfoDraft({ ...medicalInfoDraft, weight: e.target.value })}
+                    className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-outline uppercase tracking-wider">Allergies</label>
+                <input
+                  type="text"
+                  value={medicalInfoDraft.allergies}
+                  onChange={(e) => setMedicalInfoDraft({ ...medicalInfoDraft, allergies: e.target.value })}
+                  placeholder="e.g. Penicillin, Peanuts (leave blank if none)"
+                  className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-outline uppercase tracking-wider">Chronic Conditions</label>
+                <input
+                  type="text"
+                  value={medicalInfoDraft.chronicConditions}
+                  onChange={(e) => setMedicalInfoDraft({ ...medicalInfoDraft, chronicConditions: e.target.value })}
+                  placeholder="e.g. Asthma, Diabetes (leave blank if none)"
+                  className="w-full bg-surface-container-low border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+                <button
+                  type="button"
+                  onClick={() => setShowMedicalModal(false)}
+                  className="border border-[#E2E8F0] hover:bg-gray-50 text-outline font-bold text-sm py-2.5 px-6 rounded-lg transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`${medicalSaved ? 'bg-emerald-500' : 'bg-secondary hover:bg-teal-600'} text-white font-bold text-sm py-2.5 px-6 rounded-lg shadow-level-1 transition-all flex items-center gap-2 cursor-pointer`}
+                >
+                  {medicalSaved ? (
+                    <><CheckCircle className="w-4 h-4" /> Saved</>
+                  ) : (
+                    'Save Details'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- CHANGE PASSWORD MODAL ----------------- */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest w-full max-w-md rounded-lg p-6 shadow-2xl border border-gray-50 animate-scaleUp">
+            <div className="flex justify-between items-center mb-6 border-b border-[#E2E8F0] pb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Lock className="w-4 h-4 text-secondary" />
+                </div>
+                <h4 className="font-bold text-base text-on-surface">Change Password</h4>
+              </div>
+              <button onClick={() => setShowPasswordModal(false)} className="text-outline hover:text-gray-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (passwordForm.newPass !== passwordForm.confirm) {
+                alert('New passwords do not match!');
+                return;
+              }
+              if (passwordForm.newPass.length < 8) {
+                alert('Password must be at least 8 characters long.');
+                return;
+              }
+              setPasswordSaved(true);
+              setTimeout(() => {
+                setPasswordSaved(false);
+                setShowPasswordModal(false);
+              }, 1500);
+            }} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-outline uppercase tracking-wider">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? "text" : "password"}
+                    value={passwordForm.current}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
+                    className="w-full bg-surface-container-low border border-gray-200 rounded-lg pl-4 pr-10 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPasswordText(!showPasswordText)} className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-slate-600 cursor-pointer">
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-outline uppercase tracking-wider">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? "text" : "password"}
+                    value={passwordForm.newPass}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPass: e.target.value })}
+                    className="w-full bg-surface-container-low border border-gray-200 rounded-lg pl-4 pr-10 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPasswordText(!showPasswordText)} className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-slate-600 cursor-pointer">
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-outline uppercase tracking-wider">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? "text" : "password"}
+                    value={passwordForm.confirm}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                    className="w-full bg-surface-container-low border border-gray-200 rounded-lg pl-4 pr-10 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPasswordText(!showPasswordText)} className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-slate-600 cursor-pointer">
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="border border-[#E2E8F0] hover:bg-gray-50 text-outline font-bold text-sm py-2.5 px-6 rounded-lg transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`${passwordSaved ? 'bg-emerald-500' : 'bg-secondary hover:bg-teal-600'} text-white font-bold text-sm py-2.5 px-6 rounded-lg shadow-level-1 transition-all flex items-center gap-2 cursor-pointer`}
+                >
+                  {passwordSaved ? (
+                    <><CheckCircle className="w-4 h-4" /> Updated</>
+                  ) : (
+                    'Update Password'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- FULL ACTIVITY LOG MODAL ----------------- */}
+      {showActivityModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest w-full max-w-2xl max-h-[80vh] flex flex-col rounded-xl shadow-2xl border border-gray-50 animate-scaleUp">
+            <div className="flex justify-between items-center p-6 border-b border-[#E2E8F0]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-teal-600" />
+                </div>
+                <h4 className="font-bold text-lg text-on-surface">Activity History</h4>
+              </div>
+              <button onClick={() => setShowActivityModal(false)} className="text-outline hover:text-gray-600 cursor-pointer p-1 rounded-md hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 bg-surface-container-low/30">
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-[#E2E8F0] before:to-transparent">
+                {activityLog.map((item, idx) => (
+                  <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-surface-container-lowest bg-surface-container-lowest text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                      <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                    </div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-surface-container-lowest p-4 rounded-xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-bold text-slate-800">{item.action}</span>
+                        <span className="text-sm text-outline">{item.detail}</span>
+                        <span className="text-xs font-bold text-secondary mt-1">{item.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-[#E2E8F0] flex justify-end">
+              <button onClick={() => setShowActivityModal(false)} className="bg-surface-container-low hover:bg-gray-200 text-slate-700 font-bold text-sm py-2.5 px-6 rounded-lg transition-all cursor-pointer">
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

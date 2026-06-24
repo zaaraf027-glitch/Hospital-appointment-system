@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -15,8 +15,6 @@ import {
   Search,
   HeartPulse,
   LogOut,
-  User,
-  Plus,
   Stethoscope,
   ClipboardList,
   BarChart2,
@@ -25,7 +23,6 @@ import {
   X,
   Star,
   TrendingUp,
-  RefreshCw,
   Menu,
   Filter,
   Download,
@@ -44,8 +41,7 @@ import {
   Pie,
   Cell,
   Tooltip,
-  ResponsiveContainer,
-  Legend,
+  ResponsiveContainer
 } from 'recharts';
 
 /* ─────────────────────────────────────────────
@@ -121,14 +117,20 @@ const SIDEBAR_NAV = [
 /* ─────────────────────────────────────────────
    TINY HELPERS
 ───────────────────────────────────────────── */
-const getInitial = (name = '') => name.trim()[0]?.toUpperCase() ?? '?';
+const getInitial = (name = '') => {
+  const cleanName = name.replace(/^(Dr\.\s*|Dr\s+)/i, '');
+  return cleanName.trim()[0]?.toUpperCase() ?? '?';
+};
 
 const INIT_COLORS = [
   'bg-blue-500',  'bg-teal-500',  'bg-purple-500',
   'bg-rose-500',  'bg-amber-500', 'bg-green-500',
 ];
-const initColor = (name = '') =>
-  INIT_COLORS[(name.charCodeAt(0) ?? 0) % INIT_COLORS.length];
+const initColor = (name = '') => {
+  const cleanName = name.replace(/^(Dr\.\s*|Dr\s+)/i, '');
+  const initial = cleanName.trim()[0]?.toUpperCase() ?? '?';
+  return INIT_COLORS[(initial.charCodeAt(0) ?? 0) % INIT_COLORS.length];
+};
 
 const StatusBadge = ({ status }) => {
   const cfg = {
@@ -171,6 +173,7 @@ const AdminDashboard = () => {
   const [pendingList,       setPendingList]        = useState(PENDING_REQUESTS);
   const [actionConfirm,     setActionConfirm]      = useState(null); // { id, action }
   const [showAddDoctor,     setShowAddDoctor]      = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [showReports,       setShowReports]        = useState(false);
   const [doctorsList,       setDoctorsList]        = useState([
     { id: 1, name: 'Dr. Ananya Sharma', specialty: 'Cardiologist',       status: 'Active',   patients: 85, experience: '12+ Years', email: 'ananya@carewell.com', phone: '+91 9876543210' },
@@ -180,6 +183,7 @@ const AdminDashboard = () => {
     { id: 5, name: 'Dr. Vikram Gupta',  specialty: 'Orthopedic Surgeon', status: 'Active',   patients: 71, experience: '20+ Years', email: 'vikram@carewell.com', phone: '+91 9876543214' },
     { id: 6, name: 'Dr. Neha Kapoor',   specialty: 'Neurologist',        status: 'Active',   patients: 78, experience: '14+ Years', email: 'neha@carewell.com',   phone: '+91 9876543215' },
   ]);
+  // eslint-disable-next-line no-unused-vars
   const [patientDirList, setPatientDirList] = useState([
     { id: 'P-001', name: 'Ravi Shankar', email: 'ravi@mail.com', phone: '+91 9988776655', gender: 'Male', registered: '2026-05-12', appointments: 4, status: 'Active' },
     { id: 'P-002', name: 'Meera Joshi', email: 'meera@mail.com', phone: '+91 9988776656', gender: 'Female', registered: '2026-05-18', appointments: 2, status: 'Active' },
@@ -223,6 +227,7 @@ const AdminDashboard = () => {
   };
 
   /* Toggle doctor status */
+  // eslint-disable-next-line no-unused-vars
   const toggleDoctorStatus = (id) => {
     setDoctorsList(prev =>
       prev.map(d => d.id === id ? { ...d, status: d.status === 'Active' ? 'Inactive' : 'Active' } : d)
@@ -323,7 +328,7 @@ const AdminDashboard = () => {
                       <tr key={doc.id} className="hover:bg-blue-50/50 transition-colors group">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full ${initColor(doc.name)} text-white text-base font-bold flex items-center justify-center shrink-0`}>
+                            <div className="w-10 h-10 rounded-full bg-cyan-50/80 text-[#14b8a6] border border-cyan-100/50 text-base font-bold flex items-center justify-center shrink-0">
                               {getInitial(doc.name)}
                             </div>
                             <div>
@@ -1095,7 +1100,7 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
                 <span className={`text-base font-black w-5 ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-outline' : 'text-orange-650'}`}>
                   #{i + 1}
                 </span>
-                <div className={`w-8 h-8 rounded-full ${initColor(doc.name)} text-white text-base font-bold flex items-center justify-center shrink-0`}>
+                <div className="w-8 h-8 rounded-full bg-cyan-50/80 text-[#14b8a6] border border-cyan-100/50 text-base font-bold flex items-center justify-center shrink-0">
                   {getInitial(doc.name)}
                 </div>
                 <div className="flex-1 min-w-0">

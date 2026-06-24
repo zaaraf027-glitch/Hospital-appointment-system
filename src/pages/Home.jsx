@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Shield, HeartPulse, Phone, MessageSquare } from 'lucide-react';
 

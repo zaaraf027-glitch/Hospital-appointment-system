@@ -18,6 +18,8 @@
   --color-surface-dim: #d9dadf;
   --color-surface-bright: #f9f9fe;
   --color-surface-container: #f5faff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container-lowest: #ffffff;
   --color-on-surface-variant: #42474f;
 
   --color-error: #ba1a1a;
