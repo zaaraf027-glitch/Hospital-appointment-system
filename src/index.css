@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #0f4c81;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #d2e4ff;
+  --color-on-primary-container: #07497d;
+
+  --color-secondary: #14b8a6;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #ccfbf1;
+  --color-on-secondary-container: #0f766e;
+
+  --color-surface: #ffffff;
+  --color-on-surface: #191c1f;
+  --color-surface-dim: #d9dadf;
+  --color-surface-bright: #f9f9fe;
+  --color-surface-container: #f5faff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface-variant: #42474f;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Font Families */
+  --font-inter: 'Inter', sans-serif;
+
+  /* Border Radii */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 1rem; /* 16px */
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-level-1: 0px 4px 20px rgba(15, 76, 129, 0.08);
+  --shadow-level-2: 0px 10px 32px rgba(15, 76, 129, 0.12);
+}
+
+/* Typography Utilities */
+@layer utilities {
+  .text-display-lg {
+    font-family: 'Inter', sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .text-headline-lg {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .text-headline-md {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .text-headline-sm {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .text-body-lg {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  .text-body-md {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  .text-body-sm {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-label-md {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.05em;
+  }
+  .text-label-sm {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface);
+}
+
+/* Animations & Transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.animate-fadeIn { animation: fadeIn 0.25s ease both; }
+
+/* Dashboard layout constraint */
+.dashboard-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
