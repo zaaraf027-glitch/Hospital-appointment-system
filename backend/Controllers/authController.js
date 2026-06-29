@@ -1,9 +1,10 @@
-const User = require("../Models/UserModels");
-const { createSecretToken } = require("../util/SecretToken");
-const bcrypt = require("bcrypt");
-
-module.exports.Signup = async (req, res, next) => {
+import User from "../Models/UserModels.js";
+import createSecretToken from "../utils/SecretToken.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+export const Signup = async (req, res, next) => {
   try {
+    
     console.log("req received");
 
     const { email, password, username, createdAt } = req.body;
@@ -32,7 +33,7 @@ module.exports.Signup = async (req, res, next) => {
     console.log(err);
   }
 };
-module.exports.Login = async (req, res, next) => {
+export const Login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -66,4 +67,73 @@ module.exports.Login = async (req, res, next) => {
   } catch (err) {
     console.log(err);
   }
+};
+export const Logout = async (req, res) => {
+    try {
+
+        res.cookie("token", "", {
+            httpOnly: true,
+            expires: new Date(0),
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully",
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+};
+
+
+export const VerifyUser = async (req, res) => {
+    try {
+
+        // Get token from cookies
+        const token = req.cookies.token;
+
+        // If token doesn't exist
+        if (!token) {
+            return res.status(401).json({
+                status: false,
+                message: "No token found"
+            });
+        }
+
+        // Verify JWT
+        const decoded = jwt.verify(token, process.env.TOKEN_KEY);
+
+        // Find user in database
+        const user = await User.findById(decoded.id);
+
+        // User not found
+        if (!user) {
+            return res.status(404).json({
+                status: false,
+                message: "User not found"
+            });
+        }
+
+        // User verified successfully
+        return res.status(200).json({
+            status: true,
+            message: "User Verified Successfully",
+            user: user.username,
+            role: user.role
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            status: false,
+            message: error.message
+        });
+
+    }
 };

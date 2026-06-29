@@ -1,37 +1,32 @@
-
-const express = require("express");
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import User from "./Models/UserModels.js";
 const app = express();
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
-const { MONGO_URL, PORT } = process.env;
-const cookieParser = require("cookie-parser");
-
-
-
-
-
-
-
-
-const authRoute = require("./routes/authRoutes");
-mongoose
-  .connect(MONGO_URL)
-  .then(() => console.log("Server is listening on port 4000"))
-  .catch((err) => console.log(err));
-
-app.listen(PORT, () => {
-  console.log(`app is running on ${PORT}`);
-});
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    method: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  }),
-);
-app.use(cookieParser());
-
+const router = express.Router();
 app.use(express.json());
+const { MONGO_URL, PORT } = process.env;
+dotenv.config();
+import testRoutes from "./Routes/authRoutes.js";
+app.use(cookieParser());
+app.use("/",testRoutes);
+import doctorRoutes from "./Routes/doctorRoutes.js";
 
-app.use("/", authRoute);
+app.use("/doctor",doctorRoutes);
+
+
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => {
+    console.log("✅ Database Connected");
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+  
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on ${process.env.PORT}`);
+});

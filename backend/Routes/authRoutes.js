@@ -1,7 +1,17 @@
-const {Signup,Login} = require("../Controllers/authController");
-const { userVerification } = require("../middlewares/authMiddlewares");
-const router = require("express").Router();
+import express from "express";
+const router = express.Router();
+import User from "../Models/UserModels.js";
+import {
+  Signup,
+  Login,
+  Logout,
+  VerifyUser,
+  
+} from "../Controllers/authController.js";
+
 router.post("/signup",Signup);
 router.post("/login",Login);
-router.post("/",userVerification);
-module.exports = router;
+router.post("/logout",Logout); 
+router.get("/verify",VerifyUser);
+
+export default router;
