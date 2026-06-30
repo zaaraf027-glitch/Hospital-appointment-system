@@ -8,4 +8,7 @@ router.get("/all",getAllDoctors);
 router.get("/:id",getDoctorById);
 router.put("/update/:id",updateDoctor);
 router.delete("/delete/:id",deleteDoctor);
+
+
+
 export default router;
