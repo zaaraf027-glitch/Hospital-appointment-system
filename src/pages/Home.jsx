@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { User, Shield, HeartPulse, Phone, MessageSquare } from 'lucide-react';
+import backgroundImage from "../assets/home-page-hero.png";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -16,8 +17,7 @@ const Home = () => {
       <div
         className="fixed inset-0 z-0 bg-cover bg-center"
         style={{
-          backgroundImage:
-            'url("https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000")',
+          backgroundImage:`url(${backgroundImage})`
         }}
       >
         <div className="absolute inset-0 bg-slate-900/72 backdrop-blur-[3px]" />
