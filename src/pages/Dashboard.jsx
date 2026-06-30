@@ -96,18 +96,19 @@ const Dashboard = () => {
   
   // State variables
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'doctors', 'appointments', 'profile', 'settings', 'doctor-detail'
-  const [appointmentsList, setAppointmentsList] = useState(initialAppointments);
-  const [selectedDoctor, setSelectedDoctor] = useState(doctors[0]);
+  const [appointmentsList, setAppointmentsList] = useState([]);
+  const [doctorsList, setDoctorsList] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   
   // Patient details state
   const [patientInfo, setPatientInfo] = useState({
-    name: 'Student',
-    email: 'student@carewell.com',
-    phone: '+91 98765 43210',
+    name: '',
+    email: '',
+    phone: '',
     bloodGroup: 'O+',
     gender: 'Male',
     age: '21',
-    address: 'Varanasi, Uttar Pradesh, India'
+    address: ''
   });
   
   // Mobile sidebar toggle
@@ -121,9 +122,7 @@ const Dashboard = () => {
   
   // Notification items state
   const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Appointment booked with Dr. Ananya Sharma', read: false, time: '2 mins ago' },
-    { id: 2, text: 'Your medical report is now available', read: false, time: '1 hour ago' },
-    { id: 3, text: 'Welcome to CareWell Management System!', read: true, time: '1 day ago' }
+    { id: 1, text: 'Welcome to CareWell Management System!', read: true, time: '1 day ago' }
   ]);
   
   // Doctor filters
@@ -170,27 +169,95 @@ const Dashboard = () => {
   
   const activityLog = [
     { action: 'Profile updated', date: 'Today, 10:30 AM', color: 'bg-blue-500', detail: 'Updated full name and contact number' },
-    { action: 'Appointment booked with Dr. Sharma', date: '22 June 2026', color: 'bg-secondary', detail: 'Cardiology consultation at 3:00 PM' },
-    { action: 'Medical report uploaded', date: '20 June 2026', color: 'bg-purple-500', detail: 'Blood test results from City Lab' },
-    { action: 'Password changed', date: '15 June 2026', color: 'bg-amber-500', detail: 'Password updated successfully' },
-    { action: 'Personal information updated', date: '10 June 2026', color: 'bg-green-500', detail: 'Address changed to Varanasi, UP' },
-    { action: 'Account created', date: '5 June 2026', color: 'bg-indigo-500', detail: 'Registered as a new patient' },
-    { action: 'Email verified', date: '5 June 2026', color: 'bg-cyan-500', detail: 'Email student@carewell.com verified' },
-    { action: 'Two-Factor Authentication enabled', date: '6 June 2026', color: 'bg-emerald-500', detail: 'Added authenticator app' },
+    { action: 'Account created', date: 'Recently', color: 'bg-indigo-500', detail: 'Registered as a new patient' }
   ];
   
+  // Load initial data
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      navigate('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setPatientInfo({
+      name: user.username,
+      email: user.email,
+      phone: user.phone || '+91 98765 43210',
+      bloodGroup: 'O+',
+      gender: user.gender || 'Male',
+      age: '21',
+      address: user.address || 'Varanasi, Uttar Pradesh, India',
+      id: user.id
+    });
+
+    fetchDoctors();
+    fetchAppointments(user.id);
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/all`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const formatted = data.doctors.map(doc => ({
+          id: doc._id,
+          name: doc.name,
+          specialization: doc.specialization,
+          experience: `${doc.experience} Years`,
+          fee: `₹${doc.consultationFee}`,
+          rating: "4.8",
+          image: doc.profileImage || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300&h=300",
+          hospital: doc.hospital || "MediCare Hospital",
+          location: "Varanasi, Uttar Pradesh",
+          about: doc.about || "Experienced specialist focusing on patient-centered care.",
+          qualifications: doc.qualification || "MBBS, MD",
+          languages: "English, Hindi",
+          slots: doc.availableSlots && doc.availableSlots.length > 0 ? doc.availableSlots : ["10:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"]
+        }));
+        setDoctorsList(formatted);
+        if (formatted.length > 0) {
+          setSelectedDoctor(formatted[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching doctors:", err);
+    }
+  };
+
+  const fetchAppointments = async (patientId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/my/${patientId}`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const formatted = data.appointments.map(appt => ({
+          id: appt._id,
+          doctorName: appt.doctorId?.name || "Unknown Doctor",
+          specialization: appt.doctorId?.specialization || "General",
+          date: appt.appointmentDate ? new Date(appt.appointmentDate).toISOString().split('T')[0] : "Pending",
+          time: appt.appointmentTime,
+          status: appt.status,
+          hospital: appt.doctorId?.hospital || "CareWell Hospital",
+          fee: appt.doctorId?.consultationFee ? `₹${appt.doctorId.consultationFee}` : "₹500"
+        }));
+        setAppointmentsList(formatted);
+      }
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+    }
+  };
+
   // Auto-scroll to top when active tab changes
   useEffect(() => {
     window.scrollTo(0, 0);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSidebarOpen(false);
   }, [activeTab]);
 
   // Extract unique specialties
-  const specialties = ['All', ...new Set(doctors.map(doc => doc.specialization))];
+  const specialties = ['All', ...new Set(doctorsList.map(doc => doc.specialization))];
 
   // Filter doctors
-  const filteredDoctors = doctors.filter(doctor => {
+  const filteredDoctors = doctorsList.filter(doctor => {
     const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           doctor.hospital.toLowerCase().includes(searchTerm.toLowerCase());
@@ -206,58 +273,89 @@ const Dashboard = () => {
   const handleOpenDoctorDetail = (doctor) => {
     setSelectedDoctor(doctor);
     setBookingDate('2026-06-25');
-    setBookingTime('03:00 PM');
+    setBookingTime(doctor.slots && doctor.slots.length > 0 ? doctor.slots[0] : '10:00 AM');
     setDoctorDetailTab('about');
     setActiveTab('doctor-detail');
   };
 
-  const handleConfirmAppointment = () => {
+  const handleConfirmAppointment = async () => {
     if (!bookingDate || !bookingTime) {
       alert('Please select both a date and a time slot.');
       return;
     }
 
-    const newAppointment = {
-      id: `APT-${Math.floor(1000 + Math.random() * 9000)}`,
-      doctorName: selectedDoctor.name,
-      specialization: selectedDoctor.specialization,
-      date: bookingDate,
-      time: bookingTime,
-      status: 'Confirmed',
-      hospital: selectedDoctor.hospital,
-      fee: selectedDoctor.fee
-    };
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: patientInfo.id,
+          doctorId: selectedDoctor.id,
+          appointmentDate: bookingDate,
+          appointmentTime: bookingTime,
+        }),
+      });
 
-    setAppointmentsList([newAppointment, ...appointmentsList]);
-    setLatestBookedAppt(newAppointment);
-    
-    // Add new notification
-    const newNotif = {
-      id: Date.now(),
-      text: `Appointment confirmed with ${selectedDoctor.name} on ${bookingDate} at ${bookingTime}`,
-      read: false,
-      time: 'Just now'
-    };
-    setNotifications([newNotif, ...notifications]);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // Refresh appointments list
+        fetchAppointments(patientInfo.id);
 
-    setBookingSuccess(true);
+        const newNotif = {
+          id: Date.now(),
+          text: `Appointment booked with ${selectedDoctor.name} on ${bookingDate} at ${bookingTime}`,
+          read: false,
+          time: 'Just now'
+        };
+        setNotifications([newNotif, ...notifications]);
+        
+        setLatestBookedAppt({
+          id: data.appointment._id,
+          doctorName: selectedDoctor.name,
+          specialization: selectedDoctor.specialization,
+          date: bookingDate,
+          time: bookingTime,
+          status: 'Pending',
+          hospital: selectedDoctor.hospital,
+          fee: selectedDoctor.fee
+        });
+        setBookingSuccess(true);
+      } else {
+        alert(data.message || 'Failed to book appointment.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to backend.');
+    }
   };
 
-  const handleCancelAppointment = (id) => {
+  const handleCancelAppointment = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
-      setAppointmentsList(appointmentsList.map(appt => 
-        appt.id === id ? { ...appt, status: 'Cancelled' } : appt
-      ));
-      
-      const cancelledAppt = appointmentsList.find(a => a.id === id);
-      const newNotif = {
-        // eslint-disable-next-line react-hooks/purity
-        id: Date.now(),
-        text: `Cancelled appointment with ${cancelledAppt.doctorName}`,
-        read: false,
-        time: 'Just now'
-      };
-      setNotifications([newNotif, ...notifications]);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/delete/${id}`, {
+          method: 'DELETE',
+        });
+        
+        const data = await response.json();
+        if (response.ok && data.success) {
+          fetchAppointments(patientInfo.id);
+          
+          const newNotif = {
+            id: Date.now(),
+            text: `Cancelled appointment`,
+            read: false,
+            time: 'Just now'
+          };
+          setNotifications([newNotif, ...notifications]);
+        } else {
+          alert(data.message || 'Failed to cancel appointment.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to connect to backend.');
+      }
     }
   };
 
@@ -284,6 +382,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to log out?')) {
+      localStorage.removeItem('user');
       navigate('/');
     }
   };
@@ -632,7 +731,7 @@ const Dashboard = () => {
 
                 {/* Doctor Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {doctors.slice(0, 3).map((doctor) => (
+                  {doctorsList.slice(0, 3).map((doctor) => (
                     <div 
                       key={doctor.id} 
                       className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-5 flex flex-col relative overflow-hidden hover:shadow-level-1 transition-all duration-200"

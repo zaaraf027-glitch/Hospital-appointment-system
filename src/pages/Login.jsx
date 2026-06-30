@@ -1,15 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, HeartPulse } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  
+  useEffect(() => {
+    localStorage.removeItem('user');
+  }, []);
 
-  const handleLogin = (e) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simulate login → go to Patient Dashboard
-    navigate('/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // Save user session details
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect based on role
+        if (data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setError(data.message || 'Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to connect to the server. Please check if backend is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,6 +112,12 @@ const Login = () => {
               <p className="text-gray-500">Login to your account</p>
             </div>
 
+            {error && (
+              <div className="bg-red-50 text-red-600 border border-red-200 text-sm font-semibold p-3.5 rounded-xl mb-4 text-center">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
@@ -83,6 +128,8 @@ const Login = () => {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Enter your email address"
                   />
@@ -98,6 +145,8 @@ const Login = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Enter your password"
                   />
@@ -123,10 +172,15 @@ const Login = () => {
 
               <button
                 type="submit"
-                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-6"
+                disabled={loading}
+                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-6 disabled:opacity-50"
               >
-                <ArrowRight className="h-5 w-5" />
-                Login
+                {loading ? 'Logging in...' : (
+                  <>
+                    <ArrowRight className="h-5 w-5" />
+                    Login
+                  </>
+                )}
               </button>
 
               <div className="flex items-center gap-4 my-6">

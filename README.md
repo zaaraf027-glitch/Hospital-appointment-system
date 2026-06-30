@@ -406,3 +406,10 @@ For support, search the repository issues page or submit a pull request with bug
 
 # Conclusion
 CareWell Hospital Management System provides a solid foundation for any digital hospital administration project. With standard clean-code patterns, responsive design, and modular backend routing, it can scale easily to fit production deployment requirements.
+
+## Recent Updates
+
+- **Bug Fix**: Fixed 'Cast to ObjectId' MongoDB bug during appointment booking by correctly mapping backend data over dummy data.
+- **Bug Fix**: Fixed Admin Dashboard blank screen crash caused by missing useEffect imports.
+- **Auth Update**: Resolved routing logic issues preventing admin users from correctly logging into the /admin view.
+- **UI Update**: Dynamically linked the logged-in admin user's name and email to the sidebar profile component.
