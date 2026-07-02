@@ -2,10 +2,12 @@ import User from "../Models/UserModels.js";
 import createSecretToken from "../utils/SecretToken.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 export const Signup = async (req, res, next) => {
   try {
     console.log("req received");
-    const { email, password, username, role } = req.body;
+    const { email, password, username, role,accessCode } = req.body;
     console.log("accessed");
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -13,6 +15,15 @@ export const Signup = async (req, res, next) => {
         success: false,
         message: "User already exists",
       });
+    }
+    console.log(accessCode);
+    if(role ==="admin" ){
+      if(accessCode != process.env.ACCESS_CODE){
+        return res.status(403).json({
+          success :false,
+          message:"not authorized as admin",
+        })
+      }
     }
     console.log("checked");
     const user = await User.create({ email, password, username, role });
@@ -45,7 +56,7 @@ export const Signup = async (req, res, next) => {
 export const Login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
+   console.log(req.body);
     if (!email || !password) {
       return res.status(400).json({
         success: false,

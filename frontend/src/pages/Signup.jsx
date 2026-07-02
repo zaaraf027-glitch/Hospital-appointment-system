@@ -34,43 +34,72 @@ const Signup = () => {
       setRole(location.state.role);
     }
   }, [location]);
+const handleSuccess=(message)=>{
+  alert(message);
 
-  const handleSignup = async (e) => {
+}
+const handleError=(message)=>{
+  alert(message);
+  
+}
+const handleSignup = async (e) => {
     e.preventDefault();
-    try {
-      if(inputValue.password!=inputValue.confirmPassword){
+
+    if (inputValue.password !== inputValue.confirmPassword) {
         alert("Passwords do not match");
         return;
-      }
-      const userData = {
-        ...inputValue,
-        role,
-      };
-      const { data } = await API.post("/auth/signup", inputValue);
-      if (data.success) {
-        handleSuccess(data.message);
-        setInputValue({
-          username: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          role: "patient",
-        });
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
-      } else {
-        handleError(data.message);
-        if (data.message == "User already exists") {
-          setTimeout(() => {
-            navigate("/login");
-          }, 1500);
-        }
-      }
-    } catch (error) {
-      handleError(error.response?.data?.message || "Something went wrong");
     }
-  };
+
+    if (role === "admin" && inputValue.accessCode=== "") {
+        alert("Admin Access Code is required");
+        return;
+    }
+
+    try {
+
+        const userData = {
+            ...inputValue,
+            role,
+        };
+
+        const { data } = await API.post("/signup", userData);
+
+        if (data.success) {
+
+            handleSuccess(data.message);
+
+            setInputValue({
+                username: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                accessCode: "",
+            });
+
+            setRole("patient");
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 1500);
+
+        } else {
+
+            handleError(data.message);
+
+            if (data.message === "User already exists") {
+                setTimeout(() => {
+                    navigate("/login");
+                }, 1500);
+            }
+
+        }
+
+    } catch (error) {
+        console.log(error);
+        handleError(error.response?.data?.message || "Something went wrong");
+
+    }
+};
   const handleOnChange = (e) => {
     const { name, value } = e.target;
     setInputValue((prev) => ({
@@ -348,6 +377,9 @@ const Signup = () => {
                     </div>
                     <input
                       type="password"
+                      name="accessCode"
+                      value={inputValue.accessCode}
+                      onChange={handleOnChange}
                       required
                       className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                       placeholder="Enter access code"
