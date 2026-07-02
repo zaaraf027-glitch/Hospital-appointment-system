@@ -101,7 +101,7 @@ const SIDEBAR_NAV = [
     header: 'APPOINTMENTS',
     items: [
       { label: 'All Appointments',       icon: Calendar,     key: 'all-appts'       },
-      { label: 'Pending Requests',        icon: Clock,        key: 'pending',  badge: 8 },
+      { label: 'Pending Requests',        icon: Clock,        key: 'pending' },
     ],
   },
   {
@@ -1336,11 +1336,15 @@ const AdminDashboard = () => {
                           <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-outline'}`} />
                           {item.label}
                         </span>
-                        {item.badge && (
+                        {(item.key === 'pending' && pendingList.length > 0) ? (
+                          <span className="bg-orange-500 text-white text-base font-extrabold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {pendingList.length}
+                          </span>
+                        ) : item.badge ? (
                           <span className="bg-orange-500 text-white text-base font-extrabold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </button>
                     );
                   })}
@@ -1419,7 +1423,11 @@ const AdminDashboard = () => {
                 className="relative p-2.5 bg-surface-container-low hover:bg-blue-50 hover:text-secondary rounded-full transition-colors"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-base font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">8</span>
+                {pendingList.length > 0 && (
+                  <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-base font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                    {pendingList.length}
+                  </span>
+                )}
               </button>
               {notifOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-xl py-3 z-50">
@@ -1428,7 +1436,7 @@ const AdminDashboard = () => {
                     <button onClick={() => setNotifOpen(false)} className="text-base font-bold text-secondary hover:underline">Mark all read</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 mt-1">
-                    {['New appointment request from Ravi Shankar', 'Dr. Neha Kapoor updated availability', 'Monthly report is ready to download', '5 pending requests awaiting review'].map((n, i) => (
+                    {['New appointment request from Ravi Shankar', 'Dr. Neha Kapoor updated availability', 'Monthly report is ready to download', pendingList.length > 0 ? `${pendingList.length} pending requests awaiting review` : null].filter(Boolean).map((n, i) => (
                       <div key={i} className="px-4 py-3 flex flex-col gap-0.5 hover:bg-blue-50 hover:text-secondary transition-colors">
                         <p className="text-base font-semibold text-slate-700 leading-normal">{n}</p>
                         <p className="text-base font-bold text-outline mt-1">{i + 1}h ago</p>

@@ -413,3 +413,4 @@ CareWell Hospital Management System provides a solid foundation for any digital 
 - **Bug Fix**: Fixed Admin Dashboard blank screen crash caused by missing useEffect imports.
 - **Auth Update**: Resolved routing logic issues preventing admin users from correctly logging into the /admin view.
 - **UI Update**: Dynamically linked the logged-in admin user's name and email to the sidebar profile component.
+- **UI Update**: Made Pending Requests badge and notification counts fully dynamic in the Admin Dashboard, completely removing hardcoded values.
