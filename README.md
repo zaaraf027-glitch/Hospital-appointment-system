@@ -1,5 +1,25 @@
-# CareWell Hospital Management System
-> Your Health, Our Priority — A modern, full-stack digital health ecosystem for hospital administration, doctor scheduling, and patient appointment management.
+<div align="center">
+
+# 🏥 CareWell Hospital
+
+<i>Your Health, Our Priority.</i>
+
+**A modern, full-stack digital health ecosystem for hospital administration, doctor scheduling, and patient appointment management.**
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" />
+  <img src="https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express.js-404D59?style=for-the-badge" alt="Express.js" />
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS_4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS 4" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/LICENSE-MIT-ffb6c1?style=for-the-badge" alt="License MIT" />
+</p>
+
+</div>
 
 ---
 
