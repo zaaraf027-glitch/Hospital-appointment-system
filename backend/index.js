@@ -1,55 +1,82 @@
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config(); // ← MUST be first before any process.env usage
 
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import User from "./Models/UserModels.js";
-import Doctor from "./Models/doctorModels.js";
+
+import authRoutes from "./Routes/authRoutes.js";
+import doctorRoutes from "./Routes/doctorRoutes.js";
+import appointmentRoutes from "./Routes/appointmentRoutes.js";
 
 const app = express();
-const router = express.Router();
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
-}));
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// Allow both local dev and the deployed Vercel frontend
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+  process.env.FRONTEND_URL, // set this in Render env vars to your Vercel URL
+].filter(Boolean);
 
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS policy: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  })
+);
+
+// ── MIDDLEWARE ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(cookieParser());
 
-import testRoutes from "./Routes/authRoutes.js";
-app.use("/", testRoutes);
-
-import doctorRoutes from "./Routes/doctorRoutes.js";
-import appointmentroutes from "./Routes/appointmentRoutes.js";
+// ── ROUTES ────────────────────────────────────────────────────────────────────
+app.use("/", authRoutes);
 app.use("/doctor", doctorRoutes);
-app.use("/appointment", appointmentroutes);
+app.use("/appointment", appointmentRoutes);
 
-// Health check — shows a friendly page when visiting http://localhost:4000
-app.get("/", (req, res) => {
+// ── HEALTH CHECK ──────────────────────────────────────────────────────────────
+app.get("/health", (req, res) => {
   res.json({
     status: "✅ CareWell Backend is Running",
     version: "1.0.0",
+    timestamp: new Date().toISOString(),
     endpoints: {
-      auth: ["POST /signup", "POST /login", "POST /logout", "GET /verify"],
-      doctors: ["GET /doctor/all", "POST /doctor/add", "PUT /doctor/update/:id", "DELETE /doctor/delete/:id"],
-      appointments: ["POST /appointment/book", "GET /appointment/all", "GET /appointment/my/:patientId", "PUT /appointment/update/:id", "DELETE /appointment/delete/:id"]
-    }
+      auth:         ["POST /signup", "POST /login", "POST /logout", "GET /verify"],
+      doctors:      ["GET /doctor/all", "POST /doctor/add", "GET /doctor/:id", "PUT /doctor/update/:id", "DELETE /doctor/delete/:id"],
+      appointments: ["POST /appointment/book", "GET /appointment/all", "GET /appointment/my/:patientId", "PUT /appointment/update/:id", "DELETE /appointment/delete/:id"],
+    },
   });
 });
 
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(async () => {
-    console.log("✅ Database Connected");
-    
-  })
-   
+// ── DATABASE ──────────────────────────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI;
 
+if (!MONGO_URI) {
+  console.error("❌ FATAL: MONGO_URI environment variable is not set.");
+  console.error("   Set it in backend/.env (locally) or in Render Environment Variables.");
+  process.exit(1); // Exit immediately so Render knows the deploy failed
+}
+
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ Database Connected to MongoDB Atlas");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+    process.exit(1); // Crash fast so Render restarts the service
+  });
+
+// ── SERVER ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

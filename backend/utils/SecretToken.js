@@ -1,10 +1,8 @@
-import dotenv from "dotenv";
-dotenv.config();
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const createSecretToken = (id) => {
   return jwt.sign({ id }, process.env.TOKEN_KEY, {
-    expiresIn: 2 * 24 * 60 * 60,
+    expiresIn: 2 * 24 * 60 * 60, // 2 days
   });
 };
 

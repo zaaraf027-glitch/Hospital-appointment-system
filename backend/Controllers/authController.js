@@ -2,8 +2,7 @@ import User from "../Models/UserModels.js";
 import createSecretToken from "../utils/SecretToken.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
+
 export const Signup = async (req, res, next) => {
   try {
     console.log("req received");
