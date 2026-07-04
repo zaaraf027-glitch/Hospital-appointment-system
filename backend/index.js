@@ -12,7 +12,7 @@ const app = express();
 const router = express.Router();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "https://hospital-appointment-system-1-op9r.onrender.com",
   credentials: true
 }));
 
