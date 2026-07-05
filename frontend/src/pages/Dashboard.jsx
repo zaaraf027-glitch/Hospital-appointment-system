@@ -193,9 +193,10 @@ const Dashboard = () => {
 
     fetchDoctors();
     fetchAppointments(user.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchDoctors = async () => {
+  async function fetchDoctors() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/all`);
       const data = await response.json();
@@ -225,7 +226,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchAppointments = async (patientId) => {
+  async function fetchAppointments(patientId) {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/my/${patientId}`);
       const data = await response.json();
