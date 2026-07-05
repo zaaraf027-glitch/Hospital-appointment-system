@@ -1,121 +1,89 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  User,
-  ArrowRight,
-  HeartPulse,
-  Shield,
-} from "lucide-react";
-import API from "../api/axios.js";
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, ArrowRight, HeartPulse, Shield } from 'lucide-react';
+
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [inputValue, setInputValue] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "patient",
-  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState("patient"); // 'patient' or 'admin'
+  const [role, setRole] = useState('patient'); // 'patient' or 'admin'
+  
+  // Controlled fields state
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    localStorage.removeItem('user');
     // Check if role was passed via navigation state
     if (location.state && location.state.role) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRole(location.state.role);
     }
   }, [location]);
-const handleSuccess=(message)=>{
-  alert(message);
 
-}
-const handleError=(message)=>{
-  alert(message);
-  
-}
-const handleSignup = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-
-    if (inputValue.password !== inputValue.confirmPassword) {
-        alert("Passwords do not match");
-        return;
+    setError('');
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (role === 'admin' && accessCode !== 'nitin') {
+      setError('Invalid admin access code');
+      return;
     }
 
-    if (role === "admin" && inputValue.accessCode=== "") {
-        alert("Admin Access Code is required");
-        return;
-    }
-
+    setLoading(true);
     try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          role,
+        }),
+      });
 
-        const userData = {
-            ...inputValue,
-            role,
-        };
-
-        const { data } = await API.post("/signup", userData);
-
-        if (data.success) {
-
-            handleSuccess(data.message);
-
-            setInputValue({
-                username: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-                accessCode: "",
-            });
-
-            setRole("patient");
-
-            setTimeout(() => {
-                navigate("/login");
-            }, 1500);
-
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // Auto-login: save user session and redirect based on role
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.user.role === 'admin') {
+          navigate('/admin');
         } else {
-
-            handleError(data.message);
-
-            if (data.message === "User already exists") {
-                setTimeout(() => {
-                    navigate("/login");
-                }, 1500);
-            }
-
+          navigate('/dashboard');
         }
-
-    } catch (error) {
-        console.log(error);
-        handleError(error.response?.data?.message || "Something went wrong");
-
+      } else {
+        setError(data.message || 'Signup failed. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to connect to the server. Please check if backend is running.');
+    } finally {
+      setLoading(false);
     }
-};
-  const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    setInputValue((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   return (
     <div className="min-h-screen flex relative">
       {/* Background Image */}
-      <div
+      <div 
         className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            'url("https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000")',
+        style={{ 
+          backgroundImage: 'url("https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000")',
         }}
       >
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]"></div>
@@ -123,23 +91,17 @@ const handleSignup = async (e) => {
       </div>
 
       <div className="relative z-10 flex w-full max-w-7xl mx-auto">
+        
         {/* Left Content */}
         <div className="hidden md:flex flex-col justify-between w-5/12 p-12 lg:p-20">
           <div>
-            <Link
-              to="/"
-              className="flex items-center gap-2 mb-16 hover:opacity-80 transition-opacity"
-            >
+            <Link to="/" className="flex items-center gap-2 mb-16 hover:opacity-80 transition-opacity">
               <div className="bg-blue-600 p-2 rounded-lg">
                 <HeartPulse className="h-6 w-6 text-white" />
               </div>
               <div>
-                <span className="font-bold text-xl text-blue-950 block leading-tight">
-                  CareWell Hospital
-                </span>
-                <span className="text-xs text-gray-600 font-medium">
-                  Management System
-                </span>
+                <span className="font-bold text-xl text-blue-950 block leading-tight">CareWell Hospital</span>
+                <span className="text-xs text-gray-600 font-medium">Management System</span>
               </div>
             </Link>
 
@@ -148,8 +110,7 @@ const handleSignup = async (e) => {
             </h1>
             <div className="w-16 h-1 bg-blue-600 mb-6"></div>
             <p className="text-gray-700 text-lg max-w-md">
-              Create your account to access our healthcare services and manage
-              appointments with ease.
+              Create your account to access our healthcare services and manage appointments with ease.
             </p>
           </div>
 
@@ -158,9 +119,7 @@ const handleSignup = async (e) => {
               <ShieldCheck className="h-8 w-8" />
             </div>
             <div>
-              <h4 className="font-bold text-blue-950 mb-1">
-                Your data is safe with us
-              </h4>
+              <h4 className="font-bold text-blue-950 mb-1">Your data is safe with us</h4>
               <p className="text-sm text-gray-600 leading-relaxed">
                 We use advanced security to protect your personal information.
               </p>
@@ -176,21 +135,25 @@ const handleSignup = async (e) => {
               <p className="text-gray-500">Create a new account</p>
             </div>
 
+            {error && (
+              <div className="bg-red-50 text-red-600 border border-red-200 text-sm font-semibold p-3.5 rounded-xl mb-4 text-center">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSignup} className="space-y-4">
+              
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Username
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
-                    name="username"
-                    value={inputValue.username}
-                    onChange={handleOnChange}
                     required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Enter your username"
                   />
@@ -198,19 +161,16 @@ const handleSignup = async (e) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Email
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Mail className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type="email"
-                    name="email"
-                    value={inputValue.email}
-                    onChange={handleOnChange}
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Enter your email address"
                   />
@@ -218,19 +178,16 @@ const handleSignup = async (e) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={inputValue.password}
-                    onChange={handleOnChange}
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-11 pr-12 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Enter your password"
                   />
@@ -239,29 +196,22 @@ const handleSignup = async (e) => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Confirm Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    value={inputValue.confirmPassword}
-                    onChange={handleOnChange}
                     required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full pl-11 pr-12 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                     placeholder="Confirm your password"
                   />
@@ -270,117 +220,80 @@ const handleSignup = async (e) => {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
               <div className="pt-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Register As
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Register As</label>
                 <div className="grid grid-cols-2 gap-4">
-                  <label
+                  <label 
                     className={`cursor-pointer border rounded-xl p-4 flex gap-3 transition-all ${
-                      role === "patient"
-                        ? "border-blue-600 bg-blue-50/50 ring-1 ring-blue-600"
-                        : "border-gray-200 hover:border-gray-300"
+                      role === 'patient' 
+                      ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' 
+                      : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="pt-0.5">
-                      <input
-                        type="radio"
-                        name="role"
-                        value="patient"
-                        checked={role === "patient"}
-                        onChange={() => {
-                          setRole("patient");
-                          setInputValue((prev) => ({
-                            ...prev,
-                            role: "patient",
-                          }));
-                        }}
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="patient" 
+                        checked={role === 'patient'} 
+                        onChange={() => setRole('patient')}
                         className="w-4 h-4 text-blue-600 focus:ring-blue-600 mt-1"
                       />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <User
-                          className={`h-4 w-4 ${role === "patient" ? "text-blue-600" : "text-gray-500"}`}
-                        />
-                        <span
-                          className={`font-semibold text-sm ${role === "patient" ? "text-blue-900" : "text-gray-700"}`}
-                        >
-                          Patient
-                        </span>
+                        <User className={`h-4 w-4 ${role === 'patient' ? 'text-blue-600' : 'text-gray-500'}`} />
+                        <span className={`font-semibold text-sm ${role === 'patient' ? 'text-blue-900' : 'text-gray-700'}`}>Patient</span>
                       </div>
-                      <p className="text-xs text-gray-500 leading-tight">
-                        Book appointments and view doctors
-                      </p>
+                      <p className="text-xs text-gray-500 leading-tight">Book appointments and view doctors</p>
                     </div>
                   </label>
 
-                  <label
+                  <label 
                     className={`cursor-pointer border rounded-xl p-4 flex gap-3 transition-all ${
-                      role === "admin"
-                        ? "border-blue-600 bg-blue-50/50 ring-1 ring-blue-600"
-                        : "border-gray-200 hover:border-gray-300"
+                      role === 'admin' 
+                      ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' 
+                      : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="pt-0.5">
-                      <input
-                        type="radio"
-                        name="role"
-                        value="admin"
-                        checked={role === "admin"}
-                        onChange={() => {
-                          setRole("admin");
-                          setInputValue((prev) => ({
-                            ...prev,
-                            role: "admin",
-                          }));
-                        }}
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="admin" 
+                        checked={role === 'admin'} 
+                        onChange={() => setRole('admin')}
                         className="w-4 h-4 text-blue-600 focus:ring-blue-600 mt-1"
                       />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <Shield
-                          className={`h-4 w-4 ${role === "admin" ? "text-blue-600" : "text-gray-500"}`}
-                        />
-                        <span
-                          className={`font-semibold text-sm ${role === "admin" ? "text-blue-900" : "text-gray-700"}`}
-                        >
-                          Admin
-                        </span>
+                        <Shield className={`h-4 w-4 ${role === 'admin' ? 'text-blue-600' : 'text-gray-500'}`} />
+                        <span className={`font-semibold text-sm ${role === 'admin' ? 'text-blue-900' : 'text-gray-700'}`}>Admin</span>
                       </div>
-                      <p className="text-xs text-gray-500 leading-tight">
-                        Manage doctors, appointments and hospital records
-                      </p>
+                      <p className="text-xs text-gray-500 leading-tight">Manage doctors, appointments and hospital records</p>
                     </div>
                   </label>
                 </div>
               </div>
 
-              {role === "admin" && (
+              {role === 'admin' && (
                 <div className="animate-in fade-in slide-in-from-top-2 pt-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Access Code (Admin Only)
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Access Code (Admin Only)</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
                       type="password"
-                      name="accessCode"
-                      value={inputValue.accessCode}
-                      onChange={handleOnChange}
                       required
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value)}
                       className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 bg-gray-50/50"
                       placeholder="Enter access code"
                     />
@@ -390,36 +303,24 @@ const handleSignup = async (e) => {
 
               <div className="pt-2">
                 <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    required
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 mt-0.5"
-                  />
+                  <input type="checkbox" required className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 mt-0.5" />
                   <span className="text-sm text-gray-600">
-                    I agree to the{" "}
-                    <a
-                      href="#"
-                      className="font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      Terms & Conditions
-                    </a>{" "}
-                    and{" "}
-                    <a
-                      href="#"
-                      className="font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      Privacy Policy
-                    </a>
+                    I agree to the <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">Terms & Conditions</a> and <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">Privacy Policy</a>
                   </span>
                 </label>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4"
+                disabled={loading}
+                className="w-full bg-[#0066FF] hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4 disabled:opacity-50"
               >
-                <User className="h-5 w-5" />
-                Create Account
+                {loading ? 'Creating Account...' : (
+                  <>
+                    <User className="h-5 w-5" />
+                    Create Account
+                  </>
+                )}
               </button>
 
               <div className="pt-4">

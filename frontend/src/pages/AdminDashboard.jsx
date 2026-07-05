@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -101,7 +101,7 @@ const SIDEBAR_NAV = [
     header: 'APPOINTMENTS',
     items: [
       { label: 'All Appointments',       icon: Calendar,     key: 'all-appts'       },
-      { label: 'Pending Requests',        icon: Clock,        key: 'pending',  badge: 8 },
+      { label: 'Pending Requests',        icon: Clock,        key: 'pending' },
     ],
   },
   {
@@ -169,26 +169,14 @@ const AdminDashboard = () => {
   const [notifOpen,         setNotifOpen]          = useState(false);
   const [profileOpen,       setProfileOpen]        = useState(false);
   const [searchQuery,       setSearchQuery]        = useState('');
-  const [pendingList,       setPendingList]        = useState(PENDING_REQUESTS);
+  const [appointmentsList,  setAppointmentsList]   = useState([]);
+  const pendingList = appointmentsList.filter(appt => appt.status === 'Pending');
   const [actionConfirm,     setActionConfirm]      = useState(null); // { id, action }
   const [showAddDoctor,     setShowAddDoctor]      = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [showReports,       setShowReports]        = useState(false);
-  const [doctorsList, setDoctorsList] = useState(() => 
-    doctors.map(d => ({
-      ...d,
-      specialty: d.specialization,
-      email: d.email || `${d.name.toLowerCase().replace(/^(dr\.\s*|dr\s+)/i, '').replace(/[^a-z]/g, '')}@carewell.com`,
-      phone: d.phone || `+91 987654320${d.id}`,
-      ward: d.ward || `${d.hospital || 'MediCare Hospital'} - OPD Room ${100 + d.id}`,
-      status: d.id === 4 ? 'Inactive' : 'Active', // Keep Amit Singh Inactive as in original Admin state
-      patients: d.patients || (d.id * 15 + 10),
-      appointments: d.appointments || [
-        { patient: 'Ravi Shankar', date: '2026-06-28', time: '10:00 AM', status: 'Pending' },
-        { patient: 'Priya Kapoor', date: '2026-06-25', time: '11:00 AM', status: 'Booked' }
-      ]
-    }))
-  );
+  const [doctorsList,       setDoctorsList]        = useState([]);
+  const [adminUser,         setAdminUser]          = useState({ username: 'Admin', email: 'admin@carewell.com' });
   const [patientDirList, setPatientDirList] = useState([
     {
       id: 'P-001',
@@ -353,40 +341,232 @@ const AdminDashboard = () => {
     day: '2-digit', month: 'long', year: 'numeric', weekday: 'long',
   });
 
-  /* Approve / reject pending request */
-  const handleApprove = (id) => {
-    setPendingList(prev => prev.filter(r => r.id !== id));
-    setActionConfirm({ id, action: 'approved' });
-    setTimeout(() => setActionConfirm(null), 2000);
+  // Load and verify admin data
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      navigate('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    if (user.role !== 'admin') {
+      navigate('/dashboard');
+      return;
+    }
+    // Set admin user info for display
+    setAdminUser({ username: user.username || 'Admin', email: user.email || 'admin@carewell.com' });
+    
+    fetchDoctors();
+    fetchAppointments();
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/all`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const formatted = data.doctors.map(d => ({
+          id: d._id,
+          name: d.name,
+          specialization: d.specialization,
+          specialty: d.specialization,
+          qualification: d.qualification,
+          experience: `${d.experience} Years`,
+          consultationFee: d.consultationFee,
+          fee: `₹${d.consultationFee}`,
+          email: d.email,
+          phone: d.phone,
+          hospital: d.hospital || "CareWell Hospital",
+          about: d.about || "Experienced doctor.",
+          availableSlots: d.availableSlots,
+          status: d.isAvailable ? 'Active' : 'Inactive',
+          patients: d.patients || 15,
+          appointments: d.appointments || [
+            { patient: 'Ravi Shankar', date: '2026-06-28', time: '10:00 AM', status: 'Pending' }
+          ]
+        }));
+        setDoctorsList(formatted);
+      }
+    } catch (err) {
+      console.error("Error fetching doctors:", err);
+    }
   };
-  const handleReject = (id) => {
-    setPendingList(prev => prev.filter(r => r.id !== id));
-    setActionConfirm({ id, action: 'rejected' });
-    setTimeout(() => setActionConfirm(null), 2000);
+
+  const fetchAppointments = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/all`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const formatted = data.appointments.map(appt => ({
+          id: appt._id,
+          patient: appt.patientId?.username || "Unknown Patient",
+          email: appt.patientId?.email || "patient@carewell.com",
+          doctor: appt.doctorId?.name || "Unknown Doctor",
+          specialty: appt.doctorId?.specialization || "General",
+          date: appt.appointmentDate ? new Date(appt.appointmentDate).toISOString().split('T')[0] : "Pending",
+          time: appt.appointmentTime,
+          status: appt.status
+        }));
+        setAppointmentsList(formatted);
+      }
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+    }
+  };
+
+  /* Approve / reject pending request */
+  const handleApprove = async (id) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Booked' }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        fetchAppointments();
+        setActionConfirm({ id, action: 'approved' });
+        setTimeout(() => setActionConfirm(null), 2000);
+      } else {
+        alert(data.message || 'Failed to approve appointment.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to backend.');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Cancelled' }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        fetchAppointments();
+        setActionConfirm({ id, action: 'rejected' });
+        setTimeout(() => setActionConfirm(null), 2000);
+      } else {
+        alert(data.message || 'Failed to reject appointment.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to backend.');
+    }
   };
 
   /* Add doctor */
-  const handleAddDoctor = (e) => {
+  const handleAddDoctor = async (e) => {
     e.preventDefault();
     if (!newDoctorForm.name || !newDoctorForm.specialty) return;
-    const newDoc = {
-      id: doctorsList.length + 1,
-      name: newDoctorForm.name,
-      specialty: newDoctorForm.specialty,
-      status: 'Active',
-      patients: 0,
-    };
-    setDoctorsList([...doctorsList, newDoc]);
-    setNewDoctorForm({ name: '', specialty: '', experience: '', email: '' });
-    setShowAddDoctor(false);
-    alert(`${newDoctorForm.name} has been added successfully!`);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newDoctorForm.name,
+          specialization: newDoctorForm.specialty,
+          qualification: "MBBS, MD",
+          experience: Number(newDoctorForm.experience) || 5,
+          consultationFee: 500,
+          email: newDoctorForm.email || `${newDoctorForm.name.toLowerCase().replace(/[^a-z]/g, '')}@carewell.com`,
+          phone: "+91 9876543201",
+          hospital: "CareWell Hospital",
+          about: "Experienced doctor.",
+          availableSlots: ["10:00 AM", "11:30 AM", "2:00 PM"]
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        fetchDoctors();
+        setNewDoctorForm({ name: '', specialty: '', experience: '', email: '' });
+        setShowAddDoctor(false);
+        alert(`${newDoctorForm.name} has been added successfully!`);
+      } else {
+        alert(data.message || 'Failed to add doctor.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to backend.');
+    }
   };
 
   /* Toggle doctor status */
-  const toggleDoctorStatus = (id) => {
-    setDoctorsList(prev =>
-      prev.map(d => d.id === id ? { ...d, status: d.status === 'Active' ? 'Inactive' : 'Active' } : d)
-    );
+  const toggleDoctorStatus = async (id) => {
+    const doc = doctorsList.find(d => d.id === id);
+    if (!doc) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isAvailable: doc.status !== 'Active' }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        fetchDoctors();
+      } else {
+        alert(data.message || 'Failed to toggle doctor status.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to backend.');
+    }
+  };
+
+  const handleDeleteDoctor = async (id, permanent = true) => {
+    if (permanent) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/delete/${id}`, {
+          method: 'DELETE',
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          fetchDoctors();
+          setActionConfirm({ id, action: 'deleted permanently' });
+          setTimeout(() => setActionConfirm(null), 2000);
+        } else {
+          alert(data.message || 'Failed to delete doctor.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to connect to backend.');
+      }
+    } else {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isAvailable: false }),
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          fetchDoctors();
+          setActionConfirm({ id, action: 'marked inactive' });
+          setTimeout(() => setActionConfirm(null), 2000);
+        } else {
+          alert(data.message || 'Failed to update doctor.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to connect to backend.');
+      }
+    }
   };
 
   /* Patient Action Helpers */
@@ -533,7 +713,10 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) navigate('/');
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('user');
+      navigate('/');
+    }
   };
 
   /* Sidebar filtered nav */
@@ -1034,9 +1217,9 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {[...RECENT_APPOINTMENTS, ...RECENT_APPOINTMENTS].map((appt, i) => (
+                    {appointmentsList.map((appt, i) => (
                       <tr key={i} className="hover:bg-blue-50/50">
-                        <td className="px-5 py-4 text-base font-mono text-outline">APT-{1000 + i + 1}</td>
+                        <td className="px-5 py-4 text-base font-mono text-outline">APT-{i + 1}</td>
                         <td className="px-5 py-4 text-base font-bold text-on-surface">{appt.patient}</td>
                         <td className="px-5 py-4 text-base font-semibold text-slate-700">{appt.doctor}</td>
                         <td className="px-5 py-4 text-base text-outline">{appt.date}</td>
@@ -1052,12 +1235,36 @@ const AdminDashboard = () => {
 
       /* ── DEFAULT: MAIN DASHBOARD ── */
       default:
+        const stats = {
+          totalDoctors: doctorsList.length,
+          totalPatients: patientDirList.length,
+          totalAppointments: appointmentsList.length,
+          pendingRequests: pendingList.length,
+        };
+
+        const pendingCount = appointmentsList.filter(a => a.status === 'Pending').length;
+        const bookedCount = appointmentsList.filter(a => a.status === 'Booked').length;
+        const completedCount = appointmentsList.filter(a => a.status === 'Completed').length;
+        const cancelledCount = appointmentsList.filter(a => a.status === 'Cancelled').length;
+
+        const pieData = [
+          { name: 'Pending',   value: pendingCount,   color: '#F97316' },
+          { name: 'Booked',    value: bookedCount,    color: '#3B82F6' },
+          { name: 'Completed', value: completedCount, color: '#8B5CF6' },
+          { name: 'Cancelled', value: cancelledCount,  color: '#EF4444' },
+        ];
+
+        const recentAppointments = appointmentsList.slice(0, 6);
+
         return <MainDashboardContent
           pendingList={pendingList}
           handleApprove={handleApprove}
           handleReject={handleReject}
           setActiveNav={setActiveNav}
           setShowAddDoctor={setShowAddDoctor}
+          stats={stats}
+          pieData={pieData}
+          recentAppointments={recentAppointments}
         />;
     }
   };
@@ -1129,11 +1336,15 @@ const AdminDashboard = () => {
                           <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-outline'}`} />
                           {item.label}
                         </span>
-                        {item.badge && (
+                        {(item.key === 'pending' && pendingList.length > 0) ? (
+                          <span className="bg-orange-500 text-white text-base font-extrabold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {pendingList.length}
+                          </span>
+                        ) : item.badge ? (
                           <span className="bg-orange-500 text-white text-base font-extrabold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </button>
                     );
                   })}
@@ -1146,10 +1357,12 @@ const AdminDashboard = () => {
         {/* User Pill / Profile Section */}
         <div className="p-4 mb-4">
           <div className="bg-slate-50 border border-slate-100 rounded-lg p-3.5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-secondary to-teal-400 flex items-center justify-center text-white font-black text-sm shrink-0 border border-[#E2E8F0]">A</div>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-secondary to-teal-400 flex items-center justify-center text-white font-black text-sm shrink-0 border border-[#E2E8F0]">
+              {adminUser.username?.[0]?.toUpperCase() || 'A'}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-base font-extrabold text-on-surface leading-none truncate">Admin User</p>
-              <p className="text-base font-semibold text-outline mt-1.5 truncate">admin@carewell.com</p>
+              <p className="text-base font-extrabold text-on-surface leading-none truncate">{adminUser.username}</p>
+              <p className="text-base font-semibold text-outline mt-1.5 truncate">{adminUser.email}</p>
             </div>
             <button onClick={handleLogout} title="Logout" className="text-outline hover:text-red-600 transition-colors shrink-0">
               <LogOut className="w-4 h-4" />
@@ -1210,7 +1423,11 @@ const AdminDashboard = () => {
                 className="relative p-2.5 bg-surface-container-low hover:bg-blue-50 hover:text-secondary rounded-full transition-colors"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-base font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">8</span>
+                {pendingList.length > 0 && (
+                  <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-base font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                    {pendingList.length}
+                  </span>
+                )}
               </button>
               {notifOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-xl py-3 z-50">
@@ -1219,7 +1436,7 @@ const AdminDashboard = () => {
                     <button onClick={() => setNotifOpen(false)} className="text-base font-bold text-secondary hover:underline">Mark all read</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 mt-1">
-                    {['New appointment request from Ravi Shankar', 'Dr. Neha Kapoor updated availability', 'Monthly report is ready to download', '5 pending requests awaiting review'].map((n, i) => (
+                    {['New appointment request from Ravi Shankar', 'Dr. Neha Kapoor updated availability', 'Monthly report is ready to download', pendingList.length > 0 ? `${pendingList.length} pending requests awaiting review` : null].filter(Boolean).map((n, i) => (
                       <div key={i} className="px-4 py-3 flex flex-col gap-0.5 hover:bg-blue-50 hover:text-secondary transition-colors">
                         <p className="text-base font-semibold text-slate-700 leading-normal">{n}</p>
                         <p className="text-base font-bold text-outline mt-1">{i + 1}h ago</p>
@@ -1236,18 +1453,20 @@ const AdminDashboard = () => {
                 onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
                 className="flex items-center gap-3 p-1.5 pr-3 hover:bg-blue-50 hover:text-secondary rounded-full transition-colors text-left"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-teal-400 text-white font-black text-sm flex items-center justify-center border border-[#E2E8F0]">A</div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-teal-400 text-white font-black text-sm flex items-center justify-center border border-[#E2E8F0]">
+                  {adminUser.username?.[0]?.toUpperCase() || 'A'}
+                </div>
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-base font-extrabold text-on-surface leading-none">Admin</span>
-                  <span className="text-base font-bold uppercase tracking-wider text-outline mt-0.5">Super Admin</span>
+                  <span className="text-base font-extrabold text-on-surface leading-none">{adminUser.username}</span>
+                  <span className="text-base font-bold uppercase tracking-wider text-outline mt-0.5">Admin</span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-outline" />
               </button>
               {profileOpen && (
-                <div className="absolute right-0 mt-3 w-52 bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-xl py-2 z-50">
+                <div className="absolute right-0 mt-3 w-56 bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-xl py-2 z-50">
                   <div className="px-4 py-2.5 border-b border-gray-50 flex flex-col">
-                    <p className="text-base font-extrabold text-on-surface leading-none">Admin User</p>
-                    <p className="text-base font-semibold text-outline mt-1.5">admin@carewell.com</p>
+                    <p className="text-base font-extrabold text-on-surface leading-none">{adminUser.username}</p>
+                    <p className="text-base font-semibold text-outline mt-1.5 truncate">{adminUser.email}</p>
                   </div>
                   {[{ label: 'Settings', icon: Settings, key: 'settings' }].map(item => (
                     <button key={item.key} onClick={() => { setActiveNav(item.key); setProfileOpen(false); }} className="w-full text-left px-4 py-2.5 text-base text-gray-750 hover:bg-blue-50 hover:text-secondary flex items-center gap-2">
@@ -1442,16 +1661,43 @@ const AdminDashboard = () => {
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (!editingDoctor.name.trim() || !editingDoctor.specialty.trim()) {
                   alert('Name and Specialization are required!');
                   return;
                 }
-                setDoctorsList(prev => prev.map(d => d.id === editingDoctor.id ? { ...editingDoctor } : d));
-                setActionConfirm({ id: editingDoctor.id, action: 'updated' });
-                setTimeout(() => setActionConfirm(null), 2000);
-                setEditingDoctor(null);
+                try {
+                  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${editingDoctor.id}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      name: editingDoctor.name,
+                      specialization: editingDoctor.specialty,
+                      qualification: editingDoctor.qualification || "MBBS, MD",
+                      experience: Number(editingDoctor.experience.replace(/[^0-9]/g, '')) || 5,
+                      consultationFee: editingDoctor.consultationFee || 500,
+                      email: editingDoctor.email,
+                      phone: editingDoctor.phone,
+                      hospital: editingDoctor.hospital || "CareWell Hospital",
+                      about: editingDoctor.about || ""
+                    }),
+                  });
+                  const data = await response.json();
+                  if (response.ok && data.success) {
+                    fetchDoctors();
+                    setActionConfirm({ id: editingDoctor.id, action: 'updated' });
+                    setTimeout(() => setActionConfirm(null), 2000);
+                    setEditingDoctor(null);
+                  } else {
+                    alert(data.message || 'Failed to update doctor.');
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert('Failed to connect to backend.');
+                }
               }}
               className="space-y-4"
             >
@@ -1649,10 +1895,8 @@ const AdminDashboard = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setDoctorsList(prev => prev.map(d => d.id === deletingDoctor.id ? { ...d, status: 'Inactive' } : d));
+                      handleDeleteDoctor(deletingDoctor.id, false);
                       logDeleteAction(deletingDoctor, false, 'Blocked hard delete due to upcoming appointments; auto-marked as Inactive.');
-                      setActionConfirm({ id: deletingDoctor.id, action: 'marked inactive' });
-                      setTimeout(() => setActionConfirm(null), 2000);
                       setDeletingDoctor(null);
                     }}
                     className="flex-1 bg-red-500 hover:bg-red-650 text-white text-base font-bold py-2.5 rounded-lg shadow-level-1 transition-colors"
@@ -1669,15 +1913,13 @@ const AdminDashboard = () => {
                 <p className="text-base text-outline">
                   No upcoming appointments are scheduled for this doctor. You can choose to permanently remove the profile, or mark it as inactive to archive the data.
                 </p>
-
+ 
                 <div className="flex flex-col gap-2 pt-3">
                   <button
                     type="button"
                     onClick={() => {
-                      setDoctorsList(prev => prev.map(d => d.id === deletingDoctor.id ? { ...d, status: 'Inactive' } : d));
+                      handleDeleteDoctor(deletingDoctor.id, false);
                       logDeleteAction(deletingDoctor, false, 'Admin chose soft delete (archived/marked inactive) over permanent removal.');
-                      setActionConfirm({ id: deletingDoctor.id, action: 'marked inactive' });
-                      setTimeout(() => setActionConfirm(null), 2000);
                       setDeletingDoctor(null);
                     }}
                     className="w-full bg-amber-500 hover:bg-amber-600 text-white text-base font-bold py-2.5 rounded-lg shadow-level-1 transition-all"
@@ -1687,10 +1929,8 @@ const AdminDashboard = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setDoctorsList(prev => prev.filter(d => d.id !== deletingDoctor.id));
+                      handleDeleteDoctor(deletingDoctor.id, true);
                       logDeleteAction(deletingDoctor, true, 'Admin requested permanent removal; doctor has no linked appointments.');
-                      setActionConfirm({ id: deletingDoctor.id, action: 'deleted permanently' });
-                      setTimeout(() => setActionConfirm(null), 2000);
                       setDeletingDoctor(null);
                     }}
                     className="w-full bg-red-600 hover:bg-red-700 text-white text-base font-bold py-2.5 rounded-lg shadow-level-1 transition-all"
@@ -2181,11 +2421,8 @@ const AdminDashboard = () => {
   );
 };
 
-/* ===
-   MAIN DASHBOARD CONTENT (extracted for clarity)
-=== */
-const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setActiveNav, setShowAddDoctor }) => {
-  const totalAppts = PIE_DATA.reduce((a, b) => a + b.value, 0);
+const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setActiveNav, setShowAddDoctor, stats, pieData, recentAppointments }) => {
+  const totalAppts = pieData.reduce((a, b) => a + b.value, 0);
 
   return (
     <div className="space-y-7 animate-fadeIn">
@@ -2193,10 +2430,10 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
       {/* ── METRIC CARDS ROW ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {[
-          { label: 'Total Doctors',       value: STATS.totalDoctors,       icon: Stethoscope,   color: 'bg-blue-50   text-secondary',   bar: 'bg-secondary',      nav: 'doctors'   },
-          { label: 'Total Patients',      value: STATS.totalPatients,      icon: Users,          color: 'bg-green-50  text-green-605',   bar: 'bg-green-500',      nav: 'patients'  },
-          { label: 'Total Appointments',  value: STATS.totalAppointments,  icon: Calendar,       color: 'bg-purple-50 text-purple-650',  bar: 'bg-purple-500',     nav: 'all-appts' },
-          { label: 'Pending Requests',    value: STATS.pendingRequests,    icon: AlertCircle,    color: 'bg-orange-50 text-orange-600',  bar: 'bg-orange-500',     nav: 'pending'   },
+          { label: 'Total Doctors',       value: stats.totalDoctors,       icon: Stethoscope,   color: 'bg-blue-50   text-secondary',   bar: 'bg-secondary',      nav: 'doctors'   },
+          { label: 'Total Patients',      value: stats.totalPatients,      icon: Users,          color: 'bg-green-50  text-green-605',   bar: 'bg-green-500',      nav: 'patients'  },
+          { label: 'Total Appointments',  value: stats.totalAppointments,  icon: Calendar,       color: 'bg-purple-50 text-purple-650',  bar: 'bg-purple-500',     nav: 'all-appts' },
+          { label: 'Pending Requests',    value: stats.pendingRequests,    icon: AlertCircle,    color: 'bg-orange-50 text-orange-600',  bar: 'bg-orange-500',     nav: 'pending'   },
         ].map(card => {
           const Icon = card.icon;
           const textCol = card.color.split(' ')[1];
@@ -2223,29 +2460,29 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
         })}
       </div>
 
-      {/* ── QUICK ACTIONS ROW ── */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-extrabold tracking-tight text-slate-850 px-1">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* ── QUICK ACTIONS PANEL ── */}
+      <div className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6">
+        <h3 className="text-lg font-extrabold tracking-tight text-on-surface mb-5">Quick Administrator Operations</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Add New Doctor',    desc: 'Create profiles',      icon: UserPlus,      bg: 'bg-teal-50 text-secondary border-teal-100',   action: () => setShowAddDoctor(true)          },
-            { label: 'Manage Doctors',    desc: 'View active staff',    icon: Stethoscope,   bg: 'bg-green-50 text-green-655 border-green-100',  action: () => setActiveNav('doctors')         },
-            { label: 'All Appointments',  desc: 'View scheduling',      icon: ClipboardList, bg: 'bg-purple-50 text-purple-650 border-purple-100', action: () => setActiveNav('all-appts')       },
-            { label: 'Generate Reports',  desc: 'Analytics & metrics',  icon: BarChart2,     bg: 'bg-orange-50 text-orange-605 border-orange-100', action: () => setActiveNav('reports')         },
+            { label: 'Add New Doctor',    desc: 'Create profiles',      icon: UserPlus,      bg: 'bg-teal-55 text-secondary border-teal-100',   action: () => setShowAddDoctor(true)          },
+            { label: 'Manage Doctors',    desc: 'View active staff',    icon: Stethoscope,   bg: 'bg-green-55 text-green-655 border-green-100',  action: () => setActiveNav('doctors')         },
+            { label: 'All Appointments',  desc: 'View scheduling',      icon: ClipboardList, bg: 'bg-purple-55 text-purple-650 border-purple-100', action: () => setActiveNav('all-appts')       },
+            { label: 'Generate Reports',  desc: 'Analytics & metrics',  icon: BarChart2,     bg: 'bg-orange-55 text-orange-605 border-orange-100', action: () => setActiveNav('reports')         },
           ].map(qa => {
             const Icon = qa.icon;
             return (
               <button
                 key={qa.label}
                 onClick={qa.action}
-                className="flex items-center gap-4 bg-surface-container-lowest p-5 rounded-lg border border-[#E2E8F0] shadow-level-1 hover:shadow-level-2 hover:-translate-y-0.5 transition-all text-left group"
+                className={`text-left border rounded-lg p-4 flex gap-4 transition-all hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md ${qa.bg.split(' ')[2]} ${qa.bg.split(' ')[0]}`}
               >
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center border shrink-0 ${qa.bg} transition-transform group-hover:scale-105`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${qa.bg.split(' ')[1]}`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <div>
-                  <p className="text-base font-extrabold tracking-tight text-on-surface leading-tight">{qa.label}</p>
-                  <p className="text-base font-semibold text-outline mt-1 leading-tight">{qa.desc}</p>
+                <div className="min-w-0">
+                  <h4 className="text-base font-extrabold text-on-surface truncate">{qa.label}</h4>
+                  <p className="text-base font-semibold text-outline truncate mt-0.5">{qa.desc}</p>
                 </div>
               </button>
             );
@@ -2253,64 +2490,56 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
         </div>
       </div>
 
-      {/* ── MIDDLE ROW: PENDING TABLE ── */}
-      <div className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex justify-between items-center">
+      {/* ── PENDING REQUESTS PANEL ── */}
+      <div className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6 space-y-5">
+        <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-extrabold tracking-tight text-on-surface">Pending Appointment Requests</h3>
-            <p className="text-base text-outline font-semibold mt-0.5">{pendingList.length} requests awaiting approval</p>
+            <h3 className="text-lg font-extrabold tracking-tight text-on-surface">Pending Requests</h3>
+            <p className="text-base font-semibold text-outline mt-0.5">Approve or cancel doctor consultation bookings</p>
           </div>
-          <button onClick={() => setActiveNav('pending')} className="text-base font-extrabold text-secondary hover:text-teal-700 flex items-center gap-1">
-            View all <ChevronRight className="w-3 h-3" />
-          </button>
+          {pendingList.length > 0 && (
+            <span className="bg-orange-100 text-orange-600 text-base font-extrabold px-3 py-1 rounded-full">{pendingList.length} Pending</span>
+          )}
         </div>
 
         {pendingList.length === 0 ? (
-          <div className="p-12 text-center">
-            <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-3" />
-            <p className="text-base font-semibold text-slate-600">All cleared!</p>
-            <p className="text-base text-outline">No pending requests.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-gray-150 rounded-lg">
+            <CheckCircle className="w-10 h-10 text-green-500 mb-3" />
+            <h4 className="text-base font-extrabold text-on-surface">All caught up!</h4>
+            <p className="text-base font-semibold text-outline mt-0.5">No pending appointment requests need review.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
+          <div className="border border-[#E2E8F0] rounded-lg overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-50">
               <thead className="bg-surface-container-low/60">
                 <tr>
-                  {['Patient', 'Doctor', 'Date & Time', 'Status', 'Action'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-base font-black uppercase tracking-wider text-outline">{h}</th>
+                  {['Patient', 'Consulting Doctor', 'Date/Time', 'Action'].map(h => (
+                    <th key={h} className="px-5 py-3 text-left text-base font-black uppercase tracking-wider text-outline">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pendingList.slice(0, 5).map(req => (
-                  <tr key={req.id} className="hover:bg-blue-50 hover:text-[#0066FF]/40 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-full ${initColor(req.patient)} text-white text-base font-bold flex items-center justify-center shrink-0`}>
-                          {getInitial(req.patient)}
-                        </div>
-                        <div>
-                          <p className="text-base font-bold text-on-surface leading-none">{req.patient}</p>
-                          <p className="text-base text-outline mt-1">{req.email}</p>
-                        </div>
-                      </div>
+              <tbody className="divide-y divide-gray-50 bg-surface-container-lowest">
+                {pendingList.map(req => (
+                  <tr key={req.id} className="hover:bg-blue-50/20">
+                    <td className="px-5 py-4">
+                      <p className="text-base font-bold text-on-surface leading-none">{req.patient}</p>
+                      <p className="text-base font-semibold text-outline mt-1">{req.email}</p>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-base font-bold text-slate-700 leading-none">{req.doctor}</p>
-                      <p className="text-base font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md mt-1 inline-block">{req.specialty}</p>
+                    <td className="px-5 py-4">
+                      <p className="text-base font-bold text-slate-850 leading-none">{req.doctor}</p>
+                      <p className="text-base font-semibold text-outline mt-1">{req.specialty}</p>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-base font-semibold text-slate-600">{req.date}</p>
-                      <p className="text-base text-outline mt-0.5">{req.time}</p>
+                    <td className="px-5 py-4">
+                      <p className="text-base font-bold text-on-surface leading-none">{req.date}</p>
+                      <p className="text-base font-semibold text-outline mt-1">{req.time}</p>
                     </td>
-                    <td className="px-4 py-3.5"><StatusBadge status="Pending" /></td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleApprove(req.id)} className="w-7 h-7 bg-green-50 hover:bg-green-100 text-green-605 rounded-lg flex items-center justify-center transition-colors">
-                          <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    <td className="px-5 py-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleApprove(req.id)} className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 text-green-605 flex items-center justify-center transition-colors" title="Approve">
+                          <Check className="w-4 h-4" strokeWidth={3} />
                         </button>
-                        <button onClick={() => handleReject(req.id)} className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-505 rounded-lg flex items-center justify-center transition-colors">
-                          <X className="w-3.5 h-3.5" strokeWidth={3} />
+                        <button onClick={() => handleReject(req.id)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-505 flex items-center justify-center transition-colors" title="Reject">
+                          <X className="w-4 h-4" strokeWidth={3} />
                         </button>
                       </div>
                     </td>
@@ -2334,7 +2563,7 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
             </button>
           </div>
           <div className="divide-y divide-gray-50">
-            {RECENT_APPOINTMENTS.map((appt, i) => (
+            {recentAppointments.map((appt, i) => (
               <div key={i} className="px-5 py-3.5 flex justify-between items-center hover:bg-blue-50 hover:text-secondary transition-colors">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full ${initColor(appt.patient)} text-white text-base font-bold flex items-center justify-center shrink-0`}>
@@ -2393,7 +2622,7 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={PIE_DATA}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={62}
@@ -2403,14 +2632,14 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
                   startAngle={90}
                   endAngle={-270}
                 >
-                  {PIE_DATA.map((entry, index) => (
+                  {pieData.map((entry, index) => (
                     <Cell key={index} fill={entry.color} stroke="none" />
                   ))}
                   <CentreLabel cx="50%" cy="50%" total={totalAppts} />
                 </Pie>
                 <Tooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                  formatter={(value, name) => [`${value} (${Math.round(value / totalAppts * 100)}%)`, name]}
+                  formatter={(value, name) => [`${value} (${totalAppts > 0 ? Math.round(value / totalAppts * 100) : 0}%)`, name]}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -2418,7 +2647,7 @@ const MainDashboardContent = ({ pendingList, handleApprove, handleReject, setAct
 
           {/* Legend */}
           <div className="w-full md:w-1/2 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {PIE_DATA.map(entry => (
+            {pieData.map(entry => (
               <div key={entry.name} className="flex items-center gap-2 bg-surface-container-low/60 rounded-lg px-3 py-2 border border-[#E2E8F0]/40">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
                 <div className="min-w-0">
