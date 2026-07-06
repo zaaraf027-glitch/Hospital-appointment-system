@@ -22,20 +22,26 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:4173",
-  process.env.FRONTEND_URL, // set this in Render env vars to your Vercel URL
-].filter(Boolean);
+  process.env.FRONTEND_URL, // set this in Vercel env vars to your frontend URL
+].filter(Boolean).map(url => url.replace(/\/$/, ""));
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
+      if (allowedOrigins.includes(cleanOrigin)) return callback(null, true);
       callback(new Error(`CORS policy: origin ${origin} not allowed`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
   })
 );
+
+// Explicitly handle preflight OPTIONS requests for all routes
+app.options("*", cors());
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────────────────
 app.use(express.json());
