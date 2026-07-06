@@ -37,8 +37,8 @@ const Signup = () => {
       return;
     }
     
-    if (role === 'admin' && accessCode !== 'nitin') {
-      setError('Invalid admin access code');
+    if (role === 'admin' && !accessCode) {
+      setError('Please enter the admin access code');
       return;
     }
 
@@ -54,6 +54,7 @@ const Signup = () => {
           email,
           password,
           role,
+          accessCode,
         }),
       });
 
