@@ -46,7 +46,14 @@ app.use("/", authRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/appointment", appointmentRoutes);
 
-// ── HEALTH CHECK ──────────────────────────────────────────────────────────────
+// ── ROOT & HEALTH ROUTES ──────────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Hospital Appointment Backend is running successfully 🚀"
+  });
+});
+
 app.get("/health", (req, res) => {
   res.json({
     status: "✅ CareWell Backend is Running",
