@@ -45,14 +45,12 @@ const userSchema = new mongoose.Schema({
     timestamps:true,
 });
 
-userSchema.pre("save",async function(next){
-    if(!this.isModified("password")){
-      return ;
-    }
-      this.password = await bcrypt.hash(this.password,10);
-      
-    
+userSchema.pre("save", async function () {
+  // Skip hashing if the password field wasn't changed (e.g. on other field updates)
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
 });
+
 
 const User = mongoose.model("User",userSchema);
 export default User;
