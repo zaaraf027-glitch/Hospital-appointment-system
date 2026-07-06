@@ -25,6 +25,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:4173",
   process.env.FRONTEND_URL,
+  "https://hospital-appointment-system-ten-plum.vercel.app"
 ].filter(Boolean).map(url => url.replace(/\/$/, ""));
 
 app.use(
