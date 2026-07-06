@@ -78,25 +78,36 @@ const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
   console.error("❌ FATAL: MONGO_URI environment variable is not set.");
-  console.error("   Set it in backend/.env (locally) or in Render Environment Variables.");
-  process.exit(1); // Exit immediately so Render knows the deploy failed
+  // Don't call process.exit(1) in serverless — it kills the Lambda
 }
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
+// Cache the DB connection for serverless (avoids reconnecting on every request)
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) return;
+  if (!MONGO_URI) throw new Error("MONGO_URI is not defined");
+  try {
+    await mongoose.connect(MONGO_URI);
+    isConnected = true;
     console.log("✅ Database Connected to MongoDB Atlas");
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
-    process.exit(1); // Crash fast so Render restarts the service
+    throw err;
+  }
+};
+
+// Connect on startup (works for both local and serverless warm starts)
+connectDB().catch(err => console.error("Startup DB error:", err.message));
+
+// ── SERVER (local dev only) ───────────────────────────────────────────────────
+// Vercel does NOT need app.listen() — it uses the exported app directly.
+// Only start the HTTP server when running locally with `node index.js`.
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
-
-// ── SERVER ────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+}
 
 export default app;
