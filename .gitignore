@@ -29,3 +29,9 @@ backend/.env.*
 *.njsproj
 *.sln
 *.sw?
+
+# Project brain files
+project-brain/
+project-brain
+.project-brain
+
