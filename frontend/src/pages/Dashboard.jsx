@@ -55,9 +55,7 @@ const AVATAR_COLORS = [
   'bg-green-600 text-white',
 ];
 
-const DoctorAvatar = ({ src, name, className = '' }) => {
-  const [imgError, setImgError] = useState(false);
-
+const DoctorAvatar = ({ name, className = '' }) => {
   // Strip "Dr." or "Dr" prefix (case-insensitive) to get the actual name initial
   const cleanName = name?.replace(/^(Dr\.\s*|Dr\s+)/i, '') ?? '';
   const initial    = cleanName.trim()[0]?.toUpperCase() ?? '?';
@@ -70,24 +68,13 @@ const DoctorAvatar = ({ src, name, className = '' }) => {
   // Use the new colour theme: light cyan background and teal text
   const colorClass = 'bg-cyan-50/80 text-teal-600 border border-cyan-100/50';
 
-  if (imgError || !src) {
-    return (
-      <div
-        className={`flex items-center justify-center font-bold select-none ${colorClass} ${avatarClass}`}
-        aria-label={name}
-      >
-        {initial}
-      </div>
-    );
-  }
-
   return (
-    <img
-      src={src}
-      alt={name}
-      className={avatarClass}
-      onError={() => setImgError(true)}
-    />
+    <div
+      className={`flex items-center justify-center font-bold select-none ${colorClass} ${avatarClass}`}
+      aria-label={name}
+    >
+      {initial}
+    </div>
   );
 };
 
