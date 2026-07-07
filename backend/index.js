@@ -66,6 +66,22 @@ app.use((req, res, next) => {
 });
 
 // ── ROUTES ────────────────────────────────────────────────────────────────────
+// Ensure DB is connected before every request (critical for Vercel cold starts).
+// Without this, after a cold start the first request races against connectDB()
+// and Mongoose buffers the query until the connection is ready — or times out.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('[DB middleware] Cannot connect to database:', err.message);
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable — please try again in a moment.',
+    });
+  }
+});
+
 app.use("/", authRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/appointment", appointmentRoutes);

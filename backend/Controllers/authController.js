@@ -3,6 +3,15 @@ import createSecretToken from "../utils/SecretToken.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// Convert raw Mongoose/MongoDB errors into user-friendly messages
+const sanitizeError = (err) => {
+  const msg = err.message || '';
+  if (msg.includes('buffering timed out') || msg.includes('ECONNREFUSED') || msg.includes('MongoNetworkError')) {
+    return 'Database connection error. Please try again in a moment.';
+  }
+  return msg;
+};
+
 // ── Cookie helper ─────────────────────────────────────────────────────────────
 // On Vercel, frontend and backend are on different subdomains → cross-origin.
 // Cookies MUST be sameSite:"none" + secure:true to be sent cross-origin.
@@ -63,7 +72,7 @@ export const Signup = async (req, res) => {
     console.error("[Signup] Error:", err.message);
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: sanitizeError(err),
     });
   }
 };
@@ -114,7 +123,7 @@ export const Login = async (req, res) => {
     console.error("[Login] Error:", err.message);
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: sanitizeError(err),
     });
   }
 };
