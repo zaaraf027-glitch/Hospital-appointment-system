@@ -161,12 +161,17 @@ const Dashboard = () => {
   
   // Load initial data
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('patientUser');
     if (!userStr) {
       navigate('/login');
       return;
     }
     const user = JSON.parse(userStr);
+    // If an admin somehow lands here, redirect them to the admin panel
+    if (user.role === 'admin') {
+      navigate('/admin');
+      return;
+    }
     setPatientInfo({
       name: user.username,
       email: user.email,
@@ -370,7 +375,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to log out?')) {
-      localStorage.removeItem('user');
+      localStorage.removeItem('patientUser');
       navigate('/');
     }
   };

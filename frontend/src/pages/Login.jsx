@@ -6,7 +6,7 @@ const Login = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    localStorage.removeItem('user');
+    // Do not wipe sessions on mount — each role has its own key
   }, []);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -31,13 +31,12 @@ const Login = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Save user session details
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect based on role
+        // Save user session in a role-specific key so both sessions can coexist
         if (data.user.role === 'admin') {
+          localStorage.setItem('adminUser', JSON.stringify(data.user));
           navigate('/admin');
         } else {
+          localStorage.setItem('patientUser', JSON.stringify(data.user));
           navigate('/dashboard');
         }
       } else {

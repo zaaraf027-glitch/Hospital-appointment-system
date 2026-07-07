@@ -343,7 +343,7 @@ const AdminDashboard = () => {
 
   // Load and verify admin data
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('adminUser');
     if (!userStr) {
       navigate('/login');
       return;
@@ -714,7 +714,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('user');
+      localStorage.removeItem('adminUser');
       navigate('/');
     }
   };
