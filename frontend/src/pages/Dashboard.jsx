@@ -125,6 +125,9 @@ const Dashboard = () => {
   // Tabs within doctor detail view
   const [doctorDetailTab, setDoctorDetailTab] = useState('about'); // 'about', 'experience', 'education', 'reviews'
   
+  // Appointments sub-navigation filter tab
+  const [appointmentFilter, setAppointmentFilter] = useState('upcoming'); // 'upcoming', 'completed', 'cancelled'
+  
   // Contact support state
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
@@ -262,6 +265,17 @@ const Dashboard = () => {
   const totalAppointmentsCount = appointmentsList.length;
   const upcomingAppointmentsCount = appointmentsList.filter(appt => appt.status === 'Confirmed' || appt.status === 'Pending').length;
   const completedAppointmentsCount = appointmentsList.filter(appt => appt.status === 'Completed').length;
+
+  const filteredAppointments = appointmentsList.filter(appt => {
+    if (appointmentFilter === 'upcoming') {
+      return appt.status === 'Confirmed' || appt.status === 'Pending';
+    } else if (appointmentFilter === 'completed') {
+      return appt.status === 'Completed';
+    } else if (appointmentFilter === 'cancelled') {
+      return appt.status === 'Cancelled';
+    }
+    return true;
+  });
 
   const handleOpenDoctorDetail = (doctor) => {
     setSelectedDoctor(doctor);
@@ -681,7 +695,10 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('appointments')}
+                    onClick={() => {
+                      setAppointmentFilter('upcoming');
+                      setActiveTab('appointments');
+                    }}
                     className="text-base font-extrabold text-green-600 hover:text-green-700 inline-flex items-center gap-1.5 self-start mt-4 tracking-tight"
                   >
                     View all <ArrowRight className="w-3.5 h-3.5" />
@@ -701,7 +718,10 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('appointments')}
+                    onClick={() => {
+                      setAppointmentFilter('completed');
+                      setActiveTab('appointments');
+                    }}
                     className="text-base font-extrabold text-purple-600 hover:text-purple-700 inline-flex items-center gap-1.5 self-start mt-4 tracking-tight"
                   >
                     View all <ArrowRight className="w-3.5 h-3.5" />
@@ -1242,24 +1262,51 @@ const Dashboard = () => {
               </div>
 
               {/* Sub-Navigation Tabs */}
-              <div className="flex gap-6 border-b border-[#E2E8F0]">
-                <button className="flex items-center gap-2 pb-3 border-b-2 border-[#0066FF] text-secondary text-base font-extrabold transition-colors">
+              <div className="flex gap-6 border-b border-[#E2E8F0] mb-2">
+                <button 
+                  onClick={() => setAppointmentFilter('upcoming')}
+                  className={`flex items-center gap-2 pb-3 border-b-2 text-base transition-colors ${
+                    appointmentFilter === 'upcoming' 
+                      ? 'border-[#0066FF] text-secondary font-extrabold' 
+                      : 'border-transparent text-outline hover:text-on-surface font-bold'
+                  }`}
+                >
                   <CalendarDays className="w-4 h-4" /> Upcoming Appointments
-                  <span className="bg-blue-100 text-secondary px-2 py-0.5 rounded-full text-base ml-1">{upcomingAppointmentsCount}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-base ml-1 ${
+                    appointmentFilter === 'upcoming' ? 'bg-blue-100 text-secondary' : 'bg-gray-100 text-gray-650'
+                  }`}>{upcomingAppointmentsCount}</span>
                 </button>
-                <button className="flex items-center gap-2 pb-3 border-b-2 border-transparent text-outline hover:text-on-surface text-base font-bold transition-colors">
+                <button 
+                  onClick={() => setAppointmentFilter('completed')}
+                  className={`flex items-center gap-2 pb-3 border-b-2 text-base transition-colors ${
+                    appointmentFilter === 'completed' 
+                      ? 'border-[#0066FF] text-secondary font-extrabold' 
+                      : 'border-transparent text-outline hover:text-on-surface font-bold'
+                  }`}
+                >
                   <CheckCircle className="w-4 h-4" /> Completed
-                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-base ml-1">{completedAppointmentsCount}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-base ml-1 ${
+                    appointmentFilter === 'completed' ? 'bg-blue-100 text-secondary' : 'bg-gray-100 text-gray-650'
+                  }`}>{completedAppointmentsCount}</span>
                 </button>
-                <button className="flex items-center gap-2 pb-3 border-b-2 border-transparent text-outline hover:text-on-surface text-base font-bold transition-colors">
+                <button 
+                  onClick={() => setAppointmentFilter('cancelled')}
+                  className={`flex items-center gap-2 pb-3 border-b-2 text-base transition-colors ${
+                    appointmentFilter === 'cancelled' 
+                      ? 'border-[#0066FF] text-secondary font-extrabold' 
+                      : 'border-transparent text-outline hover:text-on-surface font-bold'
+                  }`}
+                >
                   <XCircle className="w-4 h-4" /> Cancelled
-                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-base ml-1">{appointmentsList.filter(a => a.status === 'Cancelled').length}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-base ml-1 ${
+                    appointmentFilter === 'cancelled' ? 'bg-blue-100 text-secondary' : 'bg-gray-100 text-gray-650'
+                  }`}>{appointmentsList.filter(a => a.status === 'Cancelled').length}</span>
                 </button>
               </div>
 
-              {appointmentsList.length > 0 ? (
+              {filteredAppointments.length > 0 ? (
                 <div className="space-y-4">
-                  {appointmentsList.map((appt) => (
+                  {filteredAppointments.map((appt) => (
                     <div key={appt.id} className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] shadow-level-1 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:border-blue-100 transition-all">
                       
                       <div className="flex items-start gap-4 w-full sm:w-auto">
@@ -1330,16 +1377,25 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="bg-surface-container-lowest rounded-lg border border-[#E2E8F0] p-16 text-center max-w-md mx-auto">
-                  <Calendar className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-                  <h4 className="text-base font-extrabold tracking-tight text-on-surface mb-1">No bookings scheduled</h4>
+                  {appointmentFilter === 'upcoming' && <Calendar className="w-16 h-16 text-gray-250 mx-auto mb-4" />}
+                  {appointmentFilter === 'completed' && <CheckCircle className="w-16 h-16 text-gray-250 mx-auto mb-4" />}
+                  {appointmentFilter === 'cancelled' && <XCircle className="w-16 h-16 text-gray-250 mx-auto mb-4" />}
+                  
+                  <h4 className="text-base font-extrabold tracking-tight text-on-surface mb-1">
+                    {appointmentFilter === 'upcoming' && 'No upcoming appointments'}
+                    {appointmentFilter === 'completed' && 'No completed appointments'}
+                    {appointmentFilter === 'cancelled' && 'No cancelled appointments'}
+                  </h4>
                   <p className="text-base font-semibold text-outline leading-relaxed mb-6">
-                    You have not registered any appointments yet. Click the button to browse specialized doctors.
+                    {appointmentFilter === 'upcoming' && 'You have no upcoming appointments scheduled. Click below to browse doctors and book a slot.'}
+                    {appointmentFilter === 'completed' && 'You do not have any past completed consultations recorded.'}
+                    {appointmentFilter === 'cancelled' && 'You do not have any cancelled appointments.'}
                   </p>
                   <button 
                     onClick={() => setActiveTab('doctors')}
-                    className="bg-secondary text-on-secondary hover:bg-secondary text-on-secondary text-white text-base font-bold py-2.5 px-6 rounded-lg transition-colors shadow-level-1"
+                    className="bg-secondary text-on-secondary hover:bg-[#0055DD] text-white text-base font-bold py-2.5 px-6 rounded-lg transition-colors shadow-level-1"
                   >
-                    Schedule First Appointment
+                    {appointmentFilter === 'upcoming' ? 'Schedule First Appointment' : 'Book New Appointment'}
                   </button>
                 </div>
               )}
