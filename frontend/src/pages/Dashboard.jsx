@@ -341,8 +341,12 @@ const Dashboard = () => {
   const handleCancelAppointment = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/delete/${id}`, {
-          method: 'DELETE',
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 'Cancelled' }),
         });
         
         const data = await response.json();
