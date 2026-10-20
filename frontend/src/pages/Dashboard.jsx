@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { doctors } from '../data/doctors';
 import { appointments as initialAppointments } from '../data/appointments';
+import apiFetch from '../utils/api';
 
 /* ------------------------------------------------------------------ */
 /*  Reusable avatar: shows the image; falls back to initial letter     */
@@ -193,7 +194,7 @@ const Dashboard = () => {
 
   async function fetchDoctors() {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/all`);
+      const response = await apiFetch('/doctor/all');
       const data = await response.json();
       if (response.ok && data.success) {
         const formatted = data.doctors.map(doc => ({
@@ -223,7 +224,7 @@ const Dashboard = () => {
 
   async function fetchAppointments(patientId) {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/my/${patientId}`);
+      const response = await apiFetch(`/appointment/my/${patientId}`);
       const data = await response.json();
       if (response.ok && data.success) {
         const formatted = data.appointments.map(appt => ({
@@ -292,11 +293,8 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/book`, {
+      const response = await apiFetch('/appointment/book', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           patientId: patientInfo.id,
           doctorId: selectedDoctor.id,
@@ -341,11 +339,8 @@ const Dashboard = () => {
   const handleCancelAppointment = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+        const response = await apiFetch(`/appointment/update/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ status: 'Cancelled' }),
         });
         

@@ -1,19 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, Stethoscope } from 'lucide-react';
 import DoctorCard from '../components/DoctorCard';
-import { doctors } from '../data/doctors';
+import { doctors as initialDoctors } from '../data/doctors';
+import apiFetch from '../utils/api';
 
 const Doctors = () => {
+  const [doctorsList, setDoctorsList] = useState(initialDoctors);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setLoading(true);
+      try {
+        const response = await apiFetch('/doctor/all');
+        const data = await response.json();
+        if (response.ok && data.success && Array.isArray(data.doctors) && data.doctors.length > 0) {
+          const formatted = data.doctors.map(doc => ({
+            id: doc._id,
+            name: doc.name,
+            specialization: doc.specialization,
+            qualification: doc.qualification,
+            experience: `${doc.experience} Years`,
+            fee: `₹${doc.consultationFee}`,
+            rating: "4.8",
+            hospital: doc.hospital || "CareWell Hospital",
+            image: doc.profileImage || "",
+            about: doc.about || "",
+            availableSlots: doc.availableSlots || [],
+          }));
+          setDoctorsList(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch doctors from API, using fallback data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
 
   // Extract unique specialties from doctors data
-  const specialties = ['All', ...new Set(doctors.map(doc => doc.specialization))];
+  const specialties = ['All', ...new Set(doctorsList.map(doc => doc.specialization))];
 
   // Filter doctors based on search term and specialty
-  const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredDoctors = doctorsList.filter(doctor => {
+    const matchesSearch = (doctor.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (doctor.specialization || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (doctor.hospital || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSpecialty = selectedSpecialty === 'All' || doctor.specialization === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   });

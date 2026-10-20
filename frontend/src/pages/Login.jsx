@@ -23,6 +23,7 @@ const Login = () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -31,6 +32,9 @@ const Login = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         // Save user session in a role-specific key so both sessions can coexist
         if (data.user.role === 'admin') {
           localStorage.setItem('adminUser', JSON.stringify(data.user));

@@ -45,6 +45,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { doctors } from '../data/doctors';
+import apiFetch from '../utils/api';
 
 /* ---
    DUMMY DATA
@@ -362,7 +363,7 @@ const AdminDashboard = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/all`);
+      const response = await apiFetch('/doctor/all');
       const data = await response.json();
       if (response.ok && data.success) {
         const formatted = data.doctors.map(d => ({
@@ -394,7 +395,7 @@ const AdminDashboard = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/all`);
+      const response = await apiFetch('/appointment/all');
       const data = await response.json();
       if (response.ok && data.success) {
         const formatted = data.appointments.map(appt => ({
@@ -417,11 +418,8 @@ const AdminDashboard = () => {
   /* Approve / reject pending request */
   const handleApprove = async (id) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+      const response = await apiFetch(`/appointment/update/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ status: 'Booked' }),
       });
 
@@ -441,11 +439,8 @@ const AdminDashboard = () => {
 
   const handleReject = async (id) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/appointment/update/${id}`, {
+      const response = await apiFetch(`/appointment/update/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ status: 'Cancelled' }),
       });
 
@@ -469,11 +464,8 @@ const AdminDashboard = () => {
     if (!newDoctorForm.name || !newDoctorForm.specialty) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/add`, {
+      const response = await apiFetch('/doctor/add', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           name: newDoctorForm.name,
           specialization: newDoctorForm.specialty,
@@ -508,11 +500,8 @@ const AdminDashboard = () => {
     const doc = doctorsList.find(d => d.id === id);
     if (!doc) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${id}`, {
+      const response = await apiFetch(`/doctor/update/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ isAvailable: doc.status !== 'Active' }),
       });
       const data = await response.json();
@@ -530,7 +519,7 @@ const AdminDashboard = () => {
   const handleDeleteDoctor = async (id, permanent = true) => {
     if (permanent) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/delete/${id}`, {
+        const response = await apiFetch(`/doctor/delete/${id}`, {
           method: 'DELETE',
         });
         const data = await response.json();
@@ -547,11 +536,8 @@ const AdminDashboard = () => {
       }
     } else {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${id}`, {
+        const response = await apiFetch(`/doctor/update/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ isAvailable: false }),
         });
         const data = await response.json();
@@ -1668,11 +1654,8 @@ const AdminDashboard = () => {
                   return;
                 }
                 try {
-                  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/doctor/update/${editingDoctor.id}`, {
+                  const response = await apiFetch(`/doctor/update/${editingDoctor.id}`, {
                     method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
                     body: JSON.stringify({
                       name: editingDoctor.name,
                       specialization: editingDoctor.specialty,

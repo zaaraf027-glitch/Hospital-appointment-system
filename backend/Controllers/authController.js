@@ -61,11 +61,13 @@ export const Signup = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User signed up successfully",
+      token,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
+        token,
       },
     });
   } catch (err) {
@@ -112,11 +114,13 @@ export const Login = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User logged in successfully",
+      token,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
+        token,
       },
     });
   } catch (err) {

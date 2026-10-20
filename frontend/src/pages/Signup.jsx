@@ -46,6 +46,7 @@ const Signup = () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/signup`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -60,13 +61,18 @@ const Signup = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Auto-login: save user session and redirect based on role
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        // Save user session in role-specific storage
         if (data.user.role === 'admin') {
+          localStorage.setItem('adminUser', JSON.stringify(data.user));
           navigate('/admin');
         } else {
+          localStorage.setItem('patientUser', JSON.stringify(data.user));
           navigate('/dashboard');
         }
+        localStorage.setItem('user', JSON.stringify(data.user));
       } else {
         setError(data.message || 'Signup failed. Please try again.');
       }

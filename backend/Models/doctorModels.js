@@ -65,11 +65,23 @@ const doctorSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Text search index for searching doctors by name, specialty, or hospital
+doctorSchema.index({ name: "text", specialization: "text", hospital: "text" });
+
+// Performance compound indexes for common queries
+doctorSchema.index({ isDeleted: 1, isAvailable: 1 });
+doctorSchema.index({ isDeleted: 1, specialization: 1 });
 
 const Doctor = mongoose.model("Doctor", doctorSchema);
 

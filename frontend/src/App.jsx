@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Doctors from './pages/Doctors';
 
 // Layout wrapper that conditionally shows Navbar/Footer
 const AppLayout = () => {
@@ -25,6 +26,7 @@ const AppLayout = () => {
           <Route path="/signup"    element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin"     element={<AdminDashboard />} />
+          <Route path="/doctors"   element={<Doctors />} />
         </Routes>
       </main>
       {!isFullscreen && <Footer />}

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 CareWell Hospital
+# 🏥 CareWell Hospital Management System
 
 <i>Your Health, Our Priority.</i>
 
@@ -10,14 +10,22 @@
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" />
   <img src="https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Express.js-404D59?style=for-the-badge" alt="Express.js" />
-  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB Atlas" />
   <img src="https://img.shields.io/badge/Tailwind_CSS_4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS 4" />
   <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/LICENSE-MIT-ffb6c1?style=for-the-badge" alt="License MIT" />
+  <img src="https://img.shields.io/badge/Deployed-Vercel-00C7B7?style=for-the-badge&logo=vercel" alt="Deployed on Vercel" />
 </p>
+
+### 🔗 Live Demo
+| | URL |
+|---|---|
+| **Frontend** | https://hospital-appointment-system-ten-plum.vercel.app |
+| **Backend API** | https://hospital-appointment-system-backend.vercel.app |
 
 </div>
 
@@ -31,376 +39,461 @@
 - [Folder Structure](#folder-structure)
 - [Prerequisites](#prerequisites)
 - [Environment Variables](#environment-variables)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
+- [Local Development](#local-development)
 - [Available Scripts](#available-scripts)
 - [Usage](#usage)
 - [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
 - [Authentication](#authentication)
 - [Application Workflow](#application-workflow)
-- [Core Modules](#core-modules)
 - [Design Patterns](#design-patterns)
-- [State Management](#state-management)
 - [Security](#security)
-- [Performance Optimizations](#performance-optimizations)
-- [Responsive Design](#responsive-design)
 - [Error Handling](#error-handling)
-- [Testing](#testing)
 - [Deployment](#deployment)
-- [CI/CD](#cicd)
-- [Configuration](#configuration)
-- [Logging & Monitoring](#logging--monitoring)
 - [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [Coding Standards](#coding-standards)
+- [Recent Updates](#recent-updates)
 - [License](#license)
 - [Author](#author)
-- [Acknowledgements](#acknowledgements)
-- [FAQ](#faq)
-- [Support](#support)
-- [Conclusion](#conclusion)
 
 ---
 
 # Overview
-The **CareWell Hospital Management System** is a production-ready Web Application designed to streamline operations for medical facilities. It automates doctor management, user authentication, and patient appointment scheduling. 
+The **CareWell Hospital Management System** is a production-ready full-stack web application designed to streamline operations for medical facilities. It automates doctor management, user authentication, and patient appointment scheduling.
 
-- **Problem Solved:** Reduces administrative bottlenecks, eliminates scheduling conflicts, improves medical file organization, and provides an elegant dashboard for patients and hospital administrators alike.
-- **Target Users:** Patients seeking medical appointments, and Hospital Administrators managing medical departments, rosters, and operational metrics.
-- **Key Objectives:** Enable seamless online booking, provide high-performance reactive dashboards, ensure robust security for medical data, and establish a modular microservice-ready backend.
+- **Problem Solved:** Reduces administrative bottlenecks, eliminates scheduling conflicts, and provides elegant dashboards for both patients and hospital administrators.
+- **Target Users:** Patients seeking medical appointments, and Hospital Administrators managing departments, rosters, and operational metrics.
+- **Key Objectives:** Enable seamless online booking, provide reactive dashboards, ensure robust security for medical data, and maintain a modular backend.
 
 ---
 
 # Features
-- **User Authentication:** Sign up and log in for patients and administrators with JWT-based verification, secure cookie handling, and password hashing (bcrypt).
-- **Interactive Dashboards:** Elegant and user-friendly dashboards for Patients (view history, book appointments) and Admins (track statistics, manage doctors, view hospital metrics).
-- **Doctor Directory Management:** Full CRUD operations for administrator-controlled doctor profiles, including descriptions, specialties, fees, and photo assets.
-- **Appointment Scheduling:** Real-time booking, updates, status changes, and deletion mechanisms.
-- **Dynamic Charts & Analytics:** Interactive data visualizations (Recharts) on dashboards indicating hospital occupancy, user growth, and appointment histories.
+- **Role-Based Authentication (RBAC):** Secure signup and login for patients and administrators with JWT-based verification, password hashing with `bcryptjs`, and strict route middleware (`requireAuth`, `requireRole`).
+- **Dual-Token Transmission:** Seamless support for both HTTP-only cookies and `Authorization: Bearer <token>` headers via a unified frontend API client (`apiFetch`), guaranteeing cross-domain reliability.
+- **Double-Booking Concurrency Protection:** Eliminates slot collision through controller-level validation and a MongoDB compound partial unique index on `{ doctorId, appointmentDate, appointmentTime }` for active bookings.
+- **Soft Deletion & Audit Compliance:** Doctors and appointments are soft-deleted (`isDeleted: true`) by default to protect medical records, with optional hard-deletion (`?hardDelete=true`) for admins.
+- **Search, Filtering & Pagination:** High-performance queries with text search indexing across doctor names, specialties, and hospitals, plus flexible pagination metadata (`total`, `totalPages`, `currentPage`).
+- **Live Doctor Directory:** The public specialists directory connects directly to live backend inventory with instant search and category filtering.
+- **Role-Based Sessions:** Separate, independent browser sessions for admin and patient roles (`adminUser` and `patientUser`), allowing concurrent logins without session conflicts.
+- **Interactive Dashboards:** Specialized reactive dashboards for Patients (view history, book appointments, track status) and Admins (track statistics, manage doctors, view hospital metrics).
+- **Dynamic Charts & Analytics:** Interactive data visualizations (Recharts) showing hospital occupancy, appointment status distribution, and operational metrics.
+- **SPA Routing:** Client-side routing with `vercel.json` rewrite rules so page refreshes on any route work without 404 errors.
 
 ---
 
 # Tech Stack
 
-| Category | Technology / Library |
+| Category | Technology |
 | :--- | :--- |
-| **Programming Languages** | JavaScript (ES6+), HTML5, CSS3 |
-| **Frontend Framework** | React 19, React Router DOM (v7) |
-| **Backend Framework** | Node.js, Express (v5) |
-| **Database** | MongoDB, Mongoose |
-| **Authentication** | JSON Web Tokens (JWT), Bcrypt, Cookie Parser |
-| **Build Tools** | Vite, PostCSS, `@tailwindcss/vite` |
-| **Styling** | Tailwind CSS (v4) |
-| **Libraries** | Lucide React (Icons), Recharts (Charts) |
-| **Environment Config** | Dotenv |
-| **Process Manager** | Nodemon |
-| **Package Manager** | npm |
-| **Version Control** | Git |
+| **Frontend Framework** | React 19, React Router DOM v7 |
+| **Backend Framework** | Node.js, Express v4 |
+| **Database** | MongoDB Atlas (cloud), Mongoose ODM v8 |
+| **Authentication** | JWT (JSON Web Tokens), Bcryptjs, Cookie-Parser |
+| **Build Tool** | Vite 8 |
+| **Styling** | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| **Icons** | Lucide React |
+| **Charts** | Recharts |
+| **Deployment** | Vercel (both frontend and backend) |
+| **Version Control** | Git + GitHub |
 
 ---
 
 # Project Architecture
 
-The system follows a classic **Client-Server-Database Architecture** split into a React frontend client and an Express REST API backend.
+Both frontend and backend are deployed on **Vercel** as separate projects in the same GitHub repository.
 
 ```
-+-------------------------------------------------------------+
-|                        Client Layer                         |
-|      (React 19, Vite, Tailwind CSS v4, React Router)       |
-+------------------------------+------------------------------+
-                               |
-                        HTTP Requests (JSON)
-                               |
-+------------------------------v------------------------------+
-|                        Backend Layer                        |
-|            (Express 5, Node.js, JWT, Bcrypt)               |
-|                                                             |
-|   +-------------------+  +-------------------+  +-------+   |
-|   |   Routes Layer    |  | Controllers Layer |  | Auth  |   |
-|   +-------------------+  +-------------------+  +-------+   |
-+------------------------------+------------------------------+
-                               |
-                        Mongoose Queries
-                               |
-+------------------------------v------------------------------+
-|                       Database Layer                        |
-|                         (MongoDB)                           |
-+-------------------------------------------------------------+
++──────────────────────────────────────────────────────────────+
+│                        CLIENT (Vercel)                       │
+│            React 19 · Vite · Tailwind CSS v4                │
+│        https://hospital-appointment-system-ten-plum.vercel.app│
++──────────────────────────┬───────────────────────────────────+
+                           │  HTTP/JSON requests
+                           │  VITE_API_URL env var
++──────────────────────────▼───────────────────────────────────+
+│                       BACKEND (Vercel)                       │
+│           Express 4 · Node.js · JWT · Bcryptjs              │
+│     https://hospital-appointment-system-backend.vercel.app   │
+│                                                              │
+│   ┌─────────────┐  ┌──────────────────┐  ┌──────────────┐  │
+│   │   Routes    │  │   Controllers    │  │  Middlewares │  │
+│   └─────────────┘  └──────────────────┘  └──────────────┘  │
++──────────────────────────┬───────────────────────────────────+
+                           │  Mongoose queries
++──────────────────────────▼───────────────────────────────────+
+│                    DATABASE (MongoDB Atlas)                   │
+│              Users · Doctors · Appointments                  │
++──────────────────────────────────────────────────────────────+
 ```
-
-1. **Client Layer:** Renders the user interface. It requests data from the Backend Layer using standard APIs and manages views with React Router.
-2. **Backend Layer:** Intercepts endpoints, authenticates tokens via custom middleware, processes business logic in Controllers, and interfaces with the Database.
-3. **Database Layer:** Persists doctors, users, and appointments in MongoDB via Mongoose Schemas.
 
 ---
 
 # Folder Structure
 
 ```
-hospital-frontend/
-├── backend/                       # Express server code
-│   ├── Controllers/               # Business logic controllers
-│   │   ├── appointmentController.js
-│   │   ├── authController.js
-│   │   └── doctorController.js
-│   ├── Middlewares/               # Custom Express middlewares
-│   │   └── authMiddlewares.js
-│   ├── Models/                    # Mongoose database models
-│   │   ├── appointment.js
-│   │   ├── doctorModels.js
-│   │   └── UserModels.js
-│   ├── Routes/                    # Express routing files
-│   │   ├── appointmentRoutes.js
+Hospital-appointment-system/
+├── backend/                        # Express REST API — deployed to Vercel
+│   ├── Controllers/
+│   │   ├── authController.js       # Signup, Login, Logout, VerifyUser
+│   │   ├── doctorController.js     # CRUD for doctor profiles
+│   │   └── appointmentController.js# Book, list, update, cancel appointments
+│   ├── Middlewares/
+│   │   └── authMiddlewares.js      # JWT token verification middleware
+│   ├── Models/
+│   │   ├── UserModels.js           # User (patient/admin) schema
+│   │   ├── doctorModels.js         # Doctor profile schema
+│   │   └── appointment.js          # Appointment schema
+│   ├── Routes/
 │   │   ├── authRoutes.js
-│   │   └── doctorRoutes.js
-│   ├── utils/                     # Backend helper scripts
-│   │   └── SecretToken.js
-│   ├── .env                       # Backend local configuration
-│   └── index.js                   # Application entry point
-├── public/                        # Static assets (favicons, etc.)
-├── src/                           # Frontend source code
-│   ├── assets/                    # Local image/asset files
-│   ├── components/                # Shared layout components (Navbar, Footer, Card)
-│   ├── data/                      # Client mock/static data
-│   ├── pages/                     # Routed page views (Home, Login, Signup, Dashboards)
-│   │   ├── AdminDashboard.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Doctors.jsx
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   └── Signup.jsx
-│   ├── App.css                    # Main app styling
-│   ├── App.jsx                    # Root client router setup
-│   ├── index.css                  # Tailwinds directives and fonts
-│   └── main.jsx                   # Vite bootstrap script
-├── package.json                   # Shared dependencies & scripts
-├── eslint.config.js               # ESLint code style config
-└── vite.config.js                 # Vite bundler configuration
+│   │   ├── doctorRoutes.js
+│   │   └── appointmentRoutes.js
+│   ├── utils/
+│   │   └── SecretToken.js          # JWT creation helper
+│   ├── vercel.json                 # Vercel serverless config for backend
+│   ├── .env                        # Local environment variables (not committed)
+│   ├── .env.example                # Template for environment variables
+│   └── index.js                    # App entry point, DB connection, middleware
+│
+├── frontend/                       # React SPA — deployed to Vercel
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/             # Navbar, Footer
+│   │   ├── data/                   # Static mock/seed data
+│   │   ├── pages/
+│   │   │   ├── AdminDashboard.jsx  # Hospital admin panel
+│   │   │   ├── Dashboard.jsx       # Patient dashboard
+│   │   │   ├── Home.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Signup.jsx
+│   │   │   └── Doctors.jsx
+│   │   ├── App.jsx                 # React Router setup
+│   │   └── main.jsx
+│   ├── vercel.json                 # SPA fallback rewrite rules
+│   ├── vite.config.js
+│   ├── .env.example                # Template for environment variables
+│   └── package.json
+│
+├── .env.example                    # Overview of environment configuration
+├── .gitignore
+├── DEPLOYMENT.md                   # Step-by-step deployment guide
+└── README.md
 ```
 
 ---
 
 # Prerequisites
-Before starting, make sure you have the following installed:
-- **Node.js**: `v18.x` or later (Recommended: `v20.x` LTS)
-- **npm**: `v9.x` or later
-- **MongoDB**: Active local instance (`localhost:27017`) or a remote MongoDB Atlas connection string.
+- **Node.js** `v18.x` or later (recommended: `v20.x` LTS)
+- **npm** `v9.x` or later
+- **MongoDB Atlas** account with a cluster and connection string (`mongodb+srv://...`)
+
+> ⚠️ Local MongoDB (`localhost:27017`) will **not** work with the deployed backend on Vercel.
 
 ---
 
 # Environment Variables
 
-Create a file named `.env` inside the `backend` folder and define the following variables:
+### Backend (`backend/.env`)
+
+Copy `backend/.env.example` to `backend/.env` and fill in your values:
 
 ```ini
-PORT=4000
-MONGO_URL=mongodb://127.0.0.1:27017/Hospital-appointment-system
-TOKEN_KEY=your_secret_jwt_sign_key
+PORT=5001
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/Hospital-appointment-system?retryWrites=true&w=majority
+TOKEN_KEY=your_strong_jwt_secret_minimum_32_characters
+ACCESS_CODE=your_admin_signup_code
+FRONTEND_URL=https://hospital-appointment-system-ten-plum.vercel.app
 ```
 
-*Note: Change `TOKEN_KEY` to a secure, randomly generated string for production environments.*
+| Variable | Description |
+|---|---|
+| `PORT` | Local server port (default: `5001`) |
+| `MONGO_URI` | MongoDB Atlas connection string — **must be `mongodb+srv://...`** |
+| `TOKEN_KEY` | JWT signing secret — use a long random string |
+| `ACCESS_CODE` | Secret code required to register an admin account |
+| `FRONTEND_URL` | Production frontend URL (for CORS) |
 
----
+### Frontend (`frontend/.env`)
 
-# Installation
-
-To install project dependencies, run the command corresponding to your package manager of choice in the `hospital-frontend` root directory:
-
-### npm
-```bash
-npm install
+```ini
+VITE_API_URL=http://localhost:5001
 ```
 
-### yarn
-```bash
-yarn install
-```
-
-### pnpm
-```bash
-pnpm install
-```
-
-### bun
-```bash
-bun install
+For production, set this in **Vercel Dashboard → Frontend Project → Settings → Environment Variables**:
+```ini
+VITE_API_URL=https://hospital-appointment-system-backend.vercel.app
 ```
 
 ---
 
-# Getting Started
+# Local Development
 
-The project runs both frontend and backend concurrently or as separate tasks.
+### 1. Clone the repository
+```bash
+git clone https://github.com/zaaraf027-glitch/Hospital-appointment-system.git
+cd Hospital-appointment-system
+```
 
-### 1. Run the Backend Server
-Navigate to the `backend` directory and run using Node:
+### 2. Set up the Backend
 ```bash
 cd backend
-node index.js
-```
-*(Optionally, use nodemon for auto-reloading if installed globally: `nodemon index.js`)*
-
-### 2. Run the Frontend Client
-In a new terminal window at the `hospital-frontend` root, run:
-```bash
+cp .env.example .env
+# Edit .env and fill in MONGO_URI, TOKEN_KEY, ACCESS_CODE
+npm install
 npm run dev
+# Backend runs on http://localhost:5001
 ```
-Open your browser and navigate to **`http://localhost:5173`**.
+
+### 3. Set up the Frontend
+```bash
+cd frontend
+# Ensure frontend/.env has: VITE_API_URL=http://localhost:5001
+npm install
+npm run dev
+# Frontend runs on http://localhost:5173
+```
 
 ---
 
 # Available Scripts
 
-The following scripts are defined in [package.json](file:///d:/Tech%20projects/Weintern/Weintren%20-%20week%203/Hospital%20appointment%20system/hospital-frontend/package.json):
+### Frontend (`frontend/`)
+| Script | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server with HMR |
+| `npm run build` | Build optimized production bundle to `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint checks |
 
-- **`npm run dev`**: Starts the Vite development server with Hot Module Replacement (HMR).
-- **`npm run build`**: Compiles the optimized static production assets into the `dist/` folder.
-- **`npm run preview`**: Starts a local preview server to test production build output locally.
-- **`npm run lint`**: Inspects codebase files using ESLint rules for code quality.
+### Backend (`backend/`)
+| Script | Description |
+|---|---|
+| `npm run dev` | Start with nodemon (auto-reload on save) |
+| `npm start` | Start with plain Node (used by Vercel) |
 
 ---
 
 # Usage
 
-1. **Sign Up & Sign In:** Create a patient profile or log in with existing credentials to access the user dashboard.
-2. **Accessing Admin Panel:** Navigate to `/admin` to toggle admin view dashboard, manage specialists, and modify appointment logs.
-3. **Book an Appointment:** From the Patient Dashboard, select a specialist, date, and description to book your appointment.
-4. **Rescheduling & Cancellation:** Manage your booked slots from your client dashboard list view.
+1. **Sign Up:** Create a patient account at `/signup`. To create an admin account, use the admin access code.
+2. **Log In:** Go to `/login` — you are redirected to `/dashboard` (patient) or `/admin` (admin) based on your role.
+3. **Patient Dashboard:** View your appointments, browse doctors, book a new appointment, manage your profile.
+4. **Admin Dashboard:** View hospital statistics, manage doctor profiles (add/edit/delete), review all appointments, approve/cancel pending requests.
+5. **Book Appointment:** Select a doctor → View Profile → choose a date and time slot → Confirm Appointment.
 
 ---
 
 # API Documentation
 
-The REST API exposes the following endpoints:
+Base URL (production): `https://hospital-appointment-system-backend.vercel.app`
 
-### Authentication
-- `POST /signup` - Creates a new user profile.
-- `POST /login` - Sign in user and retrieve cookie session.
-- `POST /logout` - Clears session cookies.
-- `GET /verify` - Authenticate current user via JWT middleware.
+### Authentication (`/`)
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `POST` | `/signup` | Public | Register patient or admin (with `accessCode`) |
+| `POST` | `/login` | Public | Authenticate user; returns JWT token & user profile |
+| `POST` | `/logout` | Public | Clear authentication cookie |
+| `GET` | `/verify` | Public (Token) | Verify token and return user identity |
+| `GET` | `/health` | Public | Server uptime, database status, and endpoint inventory |
 
-### Doctors
-- `GET /doctor/all` - Get details of all registered doctors.
-- `POST /doctor/add` - Register a new doctor.
-- `GET /doctor/:id` - Retrieve unique doctor parameters.
-- `PUT /doctor/update/:id` - Edit specific doctor properties.
-- `DELETE /doctor/delete/:id` - Deletes a doctor profile.
+### Doctors (`/doctor`)
+| Method | Endpoint | Auth Required | Query Params | Description |
+|---|---|---|---|---|
+| `GET` | `/doctor/all` | Public | `page`, `limit`, `search`, `specialization`, `isAvailable`, `sortBy`, `order` | Get doctors with search, filtering, and pagination |
+| `GET` | `/doctor/:id` | Public | None | Get specific doctor details by ID |
+| `POST` | `/doctor/add` | `admin` | None | Create a new doctor profile |
+| `PUT` | `/doctor/update/:id` | `admin` | None | Update doctor details, fee, or availability |
+| `DELETE` | `/doctor/delete/:id` | `admin` | `hardDelete` (`true`/`false`) | Soft delete (default) or permanently delete a doctor |
 
-### Appointments
-- `POST /appointment/book` - Reserve a slot for a patient.
-- `GET /appointment/my/:patientId` - List all appointments for a patient.
-- `GET /appointment/all` - List all registered appointments (Admin view).
-- `PUT /appointment/update/:id` - Edit appointment details.
-- `DELETE /appointment/delete/:id` - Cancel and delete appointment.
+### Appointments (`/appointment`)
+| Method | Endpoint | Auth Required | Query Params | Description |
+|---|---|---|---|---|
+| `POST` | `/appointment/book` | `patient` / `admin` | None | Book appointment (prevents double-booking collisions) |
+| `GET` | `/appointment/my/:patientId` | Authenticated | `status`, `page`, `limit` | Get patient appointments (patients restricted to own records) |
+| `GET` | `/appointment/all` | `admin` | `status`, `doctorId`, `patientId`, `date`, `page`, `limit`, `sortBy`, `order` | Get all hospital appointments with filters & pagination |
+| `PUT` | `/appointment/update/:id` | Authenticated | None | Update status (patients can only Cancel; admins have full access) |
+| `DELETE` | `/appointment/delete/:id` | `admin` | `hardDelete` (`true`/`false`) | Archive (soft delete) or permanently delete an appointment |
 
 ---
 
 # Database Schema
 
-The database layout uses 3 key models:
+### User (`UserModels.js`)
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `username` | String | Required, Trimmed | Full name or handle |
+| `email` | String | Required, Unique, Lowercase | User account email |
+| `password` | String | Required, Min 6 chars | Bcrypt hashed with salt rounds |
+| `role` | String | Enum: `["patient", "admin"]` | Access tier (default: `"patient"`) |
+| `phone` | String | Optional | Contact phone number |
+| `gender` | String | Enum: `["Male", "Female", "Other"]` | Patient gender |
+| `address` | String | Optional | Residential address |
+| `timestamps` | Date | Auto-generated | `createdAt`, `updatedAt` |
 
-### 1. User (`UserModels.js`)
-- `email` (String, required, unique)
-- `username` (String, required)
-- `password` (String, required)
-- `createdAt` (Date)
+### Doctor (`doctorModels.js`)
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `name` | String | Required, Trimmed | Doctor's full name |
+| `specialization` | String | Required, Indexed | Medical specialty |
+| `qualification` | String | Required | Degrees (e.g. MBBS, MD) |
+| `experience` | Number | Required | Years of clinical practice |
+| `consultationFee`| Number | Required | Consultation charge in INR |
+| `email` | String | Required, Unique | Professional email |
+| `phone` | String | Required | Office phone |
+| `hospital` | String | Default: `"CareWell Hospital"`| Hospital/clinic location |
+| `about` | String | Optional | Doctor's biography |
+| `profileImage` | String | Optional | Avatar URL |
+| `availableSlots`| Array of String | Optional | Predefined consultation hours |
+| `isAvailable` | Boolean | Default: `true` | Active roster toggle |
+| `isDeleted` | Boolean | Default: `false`, Indexed | Soft delete flag |
 
-### 2. Doctor (`doctorModels.js`)
-- `name` (String, required)
-- `specialty` (String, required)
-- `experience` (Number, required)
-- `fees` (Number, required)
-- `rating` (Number, default: 5)
-- `availability` (String, default: "Available")
+**Doctor Indexes:**
+- Text index: `{ name: "text", specialization: "text", hospital: "text" }`
+- Compound indexes: `{ isDeleted: 1, isAvailable: 1 }`, `{ isDeleted: 1, specialization: 1 }`
 
-### 3. Appointment (`appointment.js`)
-- `doctorId` (Mongoose Schema ObjectId, ref: 'Doctor')
-- `patientId` (Mongoose Schema ObjectId, ref: 'User')
-- `date` (String, required)
-- `time` (String, required)
-- `status` (String, default: 'Pending')
-- `description` (String)
+### Appointment (`appointment.js`)
+| Field | Type | Attributes | Description |
+|---|---|---|---|
+| `patientId` | ObjectId | Ref: User, Required | Patient record reference |
+| `doctorId` | ObjectId | Ref: Doctor, Required | Doctor record reference |
+| `appointmentDate` | Date | Required | Scheduled appointment date |
+| `appointmentTime` | String | Required | Selected time slot (e.g. "10:00 AM") |
+| `reason` | String | Optional | Reason for visit / symptoms |
+| `status` | String | Enum: `["Pending", "Booked", "Completed", "Cancelled"]` | Current appointment status |
+| `isDeleted` | Boolean | Default: `false`, Indexed | Soft delete flag |
+
+**Appointment Indexes:**
+- **Compound Partial Unique Index:** `{ doctorId: 1, appointmentDate: 1, appointmentTime: 1 }` with `{ status: { $in: ["Pending", "Booked"] }, isDeleted: false }` to prevent double-booking at the database level.
+- Compound patient lookup: `{ patientId: 1, isDeleted: 1, appointmentDate: -1 }`
+- Compound doctor lookup: `{ doctorId: 1, isDeleted: 1, appointmentDate: 1 }`
+- Admin lookup: `{ isDeleted: 1, status: 1, appointmentDate: -1 }`
 
 ---
 
 # Authentication
 
-Secure authentication is handled using stateless **JSON Web Tokens (JWT)**:
-1. When a user logs in, their password is verified using `bcrypt.compare`.
-2. A JWT token containing the User ID is generated and signed with the server's `TOKEN_KEY`.
-3. The token is stored securely in the user's browser inside an `httpOnly` cookie.
-4. Subsequent calls pass the cookie, which is intercepted and decrypted by the `VerifyUser` middleware.
+Stateless **JWT** authentication with dual-channel transmission:
+1. **Password Hashing:** Passwords hashed with `bcryptjs` and verified securely.
+2. **Dual-Token Delivery:** On login/signup, the backend issues a JWT token (signed with `TOKEN_KEY`) via **both** an HTTP-only cookie and the JSON response payload.
+3. **Cross-Domain Client (`apiFetch`):** The frontend client automatically includes `credentials: "include"` and transmits the `Authorization: Bearer <token>` header, preventing third-party cookie blocking on modern browsers.
+4. **Role Guards (`requireAuth` & `requireRole`):** Protected routes enforce authentication and role privilege checks at the middleware layer.
+5. **Independent Role Sessions:** Admin and patient sessions use independent localStorage keys (`adminUser` / `patientUser`), allowing simultaneous management and booking from the same browser.
 
 ---
 
 # Application Workflow
 
 ```
-[ User Interaction ]  -->  [ React UI Event ]  -->  [ Axios API Call ]
-                                                            |
-[ Database Update ]   <--  [ Controller Handler ] <-- [ Router/Middleware ]
+[ User Action ]  →  [ React UI Event ]  →  [ fetch() API Call ]
+                                                     |
+[ DB Update ]  ←  [ Controller Logic ]  ←  [ Express Route + Middleware ]
+                                                     |
+                                            [ JSON Response ]
+                                                     |
+                                         [ React State Update → UI Re-render ]
 ```
-
-1. **User requests** to view their dashboard or book an appointment.
-2. **Frontend** issues an API request passing session tokens/cookies.
-3. **Backend Middleware** intercepts the request and verifies the session token validity.
-4. **Backend Controllers** process the requests, reading/writing to the database.
-5. **JSON Response** returns to the client, triggering UI updates with React state.
 
 ---
 
 # Design Patterns
-- **MVC (Model-View-Controller):** Structured modular routing separating database layouts (Models), endpoint routing (Routes), and logic handlers (Controllers).
-- **Middleware Pattern:** Seamless hook points in the request-response lifecycle (e.g. CORS, cookie parsers, token check verification).
-
----
-
-# State Management
-The project utilizes native **React Hook state mechanisms (`useState`, `useEffect`)** inside page-level wrapper components to handle reactive variables, loading templates, and user logs.
+- **MVC:** Routes → Controllers → Models separation.
+- **Middleware Pattern:** CORS, cookie parsing, DB connection guard, JWT auth all run as Express middleware.
+- **Guard Middleware:** Every request passes through a `connectDB()` middleware ensuring the database is always connected before queries run (critical for Vercel serverless cold starts).
 
 ---
 
 # Security
-- **Bcrypt Hashing:** Passwords are never stored as plain text. They are hashed using a workload factor (salt rounds: 10) before MongoDB entry.
-- **httpOnly Cookies:** Session tokens are transmitted via secure cookie headers to shield against Cross-Site Scripting (XSS) injection.
-- **CORS Configuration:** Enables API security filters ensuring resource access is limited to client hosts.
-
----
-
-# Performance Optimizations
-- **Vite Bundler:** Instant Hot Module Replacement and production chunk splitting.
-- **Tailwind CSS v4:** Zero-runtime utility classes for fast layout generation and rendering.
-
----
-
-# Responsive Design
-CareWell is built using a mobile-first responsive Grid and Flexbox layout structure. Utilizing Tailwind’s responsive breakpoint modifiers (`sm:`, `md:`, `lg:`), the dashboard adapts seamlessly to tablets, laptops, and wide desktop screens.
+- **Bcrypt Hashing:** Passwords hashed with 12 salt rounds — never stored as plain text.
+- **httpOnly Cookies:** JWT stored in httpOnly cookies, immune to XSS attacks.
+- **CORS Allowlist:** Only specific origins (localhost dev ports + Vercel frontend URL) are allowed.
+- **Role Guards:** Admin routes check `user.role === 'admin'` server-side; dashboards redirect on role mismatch.
+- **Error Sanitization:** Raw MongoDB/Mongoose errors are sanitized before reaching the client.
 
 ---
 
 # Error Handling
-Both clients and controllers implement try-catch blocks:
-- **Client Side:** Intercepts API error states, preventing page crashes and displaying user-friendly error banners.
-- **Server Side:** Centralized try-catch logic yielding standard JSON errors (e.g., `500 Internal Server Error` or `401 Unauthorized`).
-
----
-
-# Testing
-- **Manual Verification:** Functionality has been validated through iterative visual checks, form submission assertions, and console logs.
-- **API Testing:** Verified endpoint parameters using testing software and tools.
+- **Backend:** Global Express error handler returns clean JSON (`{ success: false, message: "..." }`). MongoDB timeout errors are caught and returned as user-friendly messages.
+- **Frontend:** `try/catch` around all API calls with appropriate user feedback messages.
+- **DB Connection:** Backend middleware calls `connectDB()` before every request, handling Vercel cold-start race conditions.
 
 ---
 
 # Deployment
-- **Frontend Hosting:** Build artifacts inside `dist/` can be deployed directly to static hosts like **Vercel, Netlify, or AWS S3**.
-- **Backend Hosting:** Node server can run on containerized PaaS platforms like **Render, Heroku, or railway.app**.
+
+Both the frontend and backend are deployed on **Vercel** as separate projects from the same GitHub repository.
+
+## Backend — Vercel
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | `backend` |
+| **Build Command** | `npm install` |
+| **Output Directory** | *(leave blank)* |
+| **Framework Preset** | Other |
+
+**Required Environment Variables** (Vercel Dashboard → Backend Project → Settings → Environment Variables):
+```
+MONGO_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/Hospital-appointment-system?retryWrites=true&w=majority
+TOKEN_KEY=your_strong_jwt_secret
+ACCESS_CODE=your_admin_access_code
+FRONTEND_URL=https://hospital-appointment-system-ten-plum.vercel.app
+```
+
+## Frontend — Vercel
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | `frontend` |
+| **Framework Preset** | Vite |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
+
+**Required Environment Variables** (Vercel Dashboard → Frontend Project → Settings → Environment Variables):
+```
+VITE_API_URL=https://hospital-appointment-system-backend.vercel.app
+```
+
+> The `frontend/vercel.json` contains SPA rewrite rules that redirect all routes to `index.html`, fixing 404 errors on page refresh.
+
+---
+
+# Troubleshooting
+
+| Problem | Cause | Solution |
+|---|---|---|
+| `404 NOT_FOUND` on page refresh | No SPA fallback rule | Ensure `frontend/vercel.json` exists with `"rewrites"` to `/index.html` |
+| `Operation 'users.findOne()' buffering timed out` | Wrong `MONGO_URI` on Vercel | Set `MONGO_URI` to `mongodb+srv://...` (Atlas), NOT `localhost` |
+| Admin and patient sessions conflicting | Shared `localStorage` key | Fixed — admin uses `adminUser` key, patient uses `patientUser` key |
+| CORS errors in production | Frontend origin not in allowlist | Add `FRONTEND_URL` env var to backend on Vercel |
+| Blank page after login | Wrong redirect or missing env var | Check `VITE_API_URL` is set correctly in Vercel frontend settings |
+
+---
+
+# Recent Updates
+
+### 🚀 Phase 1: Security & Route Protection (Completed)
+- **Role-Based Middlewares:** Implemented `requireAuth` and `requireRole("admin")` supporting dual authentication via HTTP-only cookies and `Authorization: Bearer <token>` headers.
+- **Protected Endpoints:** Secured all doctor modification routes (`/doctor/add`, `/doctor/update`, `/doctor/delete`) and appointment management routes (`/appointment/book`, `/appointment/all`, `/appointment/update`, `/appointment/delete`).
+- **Patient Privacy:** Restricted patients to querying and cancelling only their own appointments, preventing account/ID spoofing.
+- **Double-Booking Prevention:** Added concurrency checks at controller level and a compound unique index in MongoDB on `{ doctorId, appointmentDate, appointmentTime }` for active slots.
+- **Unified Frontend Client:** Introduced `apiFetch` utility (`frontend/src/utils/api.js`) to handle authenticated API calls with token and cookie synchronization across origins.
+
+### ⚡ Phase 2: Database & Performance (Completed)
+- **Soft Deletion Architecture:** Added `isDeleted: true` to both Doctor and Appointment models with updated indexes, preventing accidental data loss of medical records while preserving audit trails. Supports permanent hard delete via `?hardDelete=true`.
+- **Text Search & Compound Indexing:** Added MongoDB text search index on `{ name, specialization, hospital }` and optimized lookup indexes on appointments (`patientId`, `doctorId`, `status`, `appointmentDate`).
+- **Search, Filtering & Pagination:** Enabled dynamic query params on `/doctor/all` and `/appointment/all` (`search`, `specialization`, `isAvailable`, `status`, `page`, `limit`, `sortBy`, `order`) with full pagination metadata.
+- **Live Doctor Directory:** Connected public `Doctors.jsx` directory to live backend API with search and category filtering.
+
+### 🛠️ Infrastructure & Stability Fixes
+- **Fix:** Added `frontend/vercel.json` rewrite rules — page refresh no longer shows 404.
+- **Fix:** Doctor avatar now dynamically computes first letter of doctor's clean name, removing broken placeholder images.
+- **Fix:** Separated admin and patient browser sessions into independent localStorage keys (`adminUser` / `patientUser`).
+- **Fix:** Added `connectDB()` middleware that runs before every Express request — resolves MongoDB buffering timeout errors on Vercel cold starts.
+- **Fix:** Migrated to `bcryptjs` for serverless runtime stability.
 
 ---
 
 # License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **MIT License**.
 
 ---
 
@@ -409,28 +502,5 @@ Developed with ❤️ by the CareWell Development Team.
 
 ---
 
-# FAQ
-
-**Q: Can I run this database on MongoDB Atlas instead of localhost?**  
-A: Yes! Simply update `MONGO_URL` in your `backend/.env` with your remote MongoDB Atlas connection string.
-
-**Q: What is the default port for the frontend?**  
-A: Vite starts the frontend on port `5173` by default.
-
----
-
 # Support
-For support, search the repository issues page or submit a pull request with bug fixes or suggestions.
-
----
-
-# Conclusion
-CareWell Hospital Management System provides a solid foundation for any digital hospital administration project. With standard clean-code patterns, responsive design, and modular backend routing, it can scale easily to fit production deployment requirements.
-
-## Recent Updates
-
-- **Bug Fix**: Fixed 'Cast to ObjectId' MongoDB bug during appointment booking by correctly mapping backend data over dummy data.
-- **Bug Fix**: Fixed Admin Dashboard blank screen crash caused by missing useEffect imports.
-- **Auth Update**: Resolved routing logic issues preventing admin users from correctly logging into the /admin view.
-- **UI Update**: Dynamically linked the logged-in admin user's name and email to the sidebar profile component.
-- **UI Update**: Made Pending Requests badge and notification counts fully dynamic in the Admin Dashboard, completely removing hardcoded values.
+For support, open an issue on the [GitHub repository](https://github.com/zaaraf027-glitch/Hospital-appointment-system/issues).

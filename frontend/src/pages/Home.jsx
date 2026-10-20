@@ -43,13 +43,14 @@ const Home = () => {
         {/* Center – Nav Links */}
         <div className="hidden md:flex items-center gap-8">
           {['Our Specialists', 'Services', 'Research', 'Facility'].map((link) => (
-            <a
+            <button
               key={link}
-              href="#"
+              type="button"
+              onClick={() => link === 'Our Specialists' ? navigate('/doctors') : null}
               className="text-gray-300 text-[13px] font-medium hover:text-white transition-colors duration-200"
             >
               {link}
-            </a>
+            </button>
           ))}
         </div>
 
